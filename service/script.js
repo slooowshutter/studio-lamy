@@ -156,7 +156,7 @@ window.__site = 1;
       const v = (n) => (form.elements[n] ? form.elements[n].value.trim() : '');
       const body = `Bonjour,\n\nJe m’appelle ${v('nom')}, je tiens ${v('commerce')}${v('ville') ? ' à ' + v('ville') : ''}. Vous pouvez me joindre au ${v('contact')}.\n\n${v('message') ? 'P.-S. : ' + v('message') + '\n\n' : ''}`;
       const link = $('[data-mailto]', notice);
-      link.href = `mailto:studio.lamy@mail.grokbot.com?subject=${encodeURIComponent('Mon site : ' + v('commerce'))}&body=${encodeURIComponent(body)}`;
+      link.href = `mailto:studiolamy@proton.me?subject=${encodeURIComponent('Mon site : ' + v('commerce'))}&body=${encodeURIComponent(body)}`;
       notice.hidden = false;
       notice.setAttribute('tabindex', '-1');
       notice.focus({ preventScroll: false });
