@@ -42,7 +42,28 @@ window.__site = 1;
   function today() {
     const t = paris();
     const date = new Date(Date.UTC(t.y, t.m - 1, t.d, 12));
-    return { t, dow: date.getUTCDay(), now: t.h * 60 + t.mi };
+    return { t, date, dow: date.getUTCDay(), now: t.h * 60 + t.mi };
+  }
+
+  /* ---------- jours fériés (France métropolitaine) : horaires à confirmer ---------- */
+  const DAY_MS = 864e5;
+  function easter(y) {
+    const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4;
+    const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+    return Date.UTC(y, month - 1, day, 12);
+  }
+  const FIXED = { '1-1': 'Jour de l’an', '5-1': 'Fête du Travail', '5-8': 'Victoire 1945', '7-14': 'Fête nationale', '8-15': 'Assomption', '11-1': 'Toussaint', '11-11': 'Armistice', '12-25': 'Noël' };
+  function holiday(date) {
+    const key = (date.getUTCMonth() + 1) + '-' + date.getUTCDate();
+    if (FIXED[key]) return FIXED[key];
+    const e = easter(date.getUTCFullYear());
+    const t = date.getTime();
+    if (t === e + DAY_MS) return 'Lundi de Pâques';
+    if (t === e + 39 * DAY_MS) return 'Ascension';
+    if (t === e + 50 * DAY_MS) return 'Lundi de Pentecôte';
+    return null;
   }
 
   /* ---------- entrée ---------- */
@@ -51,14 +72,22 @@ window.__site = 1;
   /* ---------- ouvert / fermé ---------- */
   (function status() {
     const el = $('[data-status]');
-    const { dow, now } = today();
+    const { date, dow, now } = today();
+    const h = CFG.hours[dow];
+    const hol = holiday(date);
     const row = $(`.hours__table tr[data-dow="${dow}"]`);
     if (row) row.classList.add('is-today');
+    if (row && hol && h) {
+      row.classList.add('is-ferie');
+      const td = $('td', row);
+      if (td) td.textContent = `${hol}${NB}: à confirmer`;
+    }
     if (!el) return;
-    const h = CFG.hours[dow];
     let txt;
     let open = false;
-    if (h && now < h[0]) {
+    if (hol && h && now < h[1]) {
+      txt = `${hol}, jour férié${NB}: horaires à confirmer avec le salon`;
+    } else if (h && now < h[0]) {
       txt = `Ouvre aujourd’hui à ${hhmm(h[0])}`;
     } else if (h && now < h[1]) {
       txt = `Ouvert aujourd’hui jusqu’à ${hhmm(h[1])}`;
@@ -68,7 +97,11 @@ window.__site = 1;
         const d = (dow + k) % 7;
         if (CFG.hours[d]) {
           const when = k === 1 ? 'demain' : DAYS[d];
-          txt = (h ? 'Fermé pour aujourd’hui' : `Fermé le ${DAYS[dow]}`) + `. Réouverture ${when} à ${hhmm(CFG.hours[d][0])}`;
+          const head = h ? 'Fermé pour aujourd’hui' : `Fermé le ${DAYS[dow]}`;
+          const nh = holiday(new Date(date.getTime() + k * DAY_MS));
+          txt = nh
+            ? `${head}. ${cap(when)}, ${nh}, jour férié${NB}: horaires à confirmer`
+            : `${head}. Réouverture ${when} à ${hhmm(CFG.hours[d][0])}`;
           break;
         }
       }
@@ -186,14 +219,14 @@ window.__site = 1;
     const { t } = today();
     return Array.from({ length: CFG.days }, (_, i) => {
       const date = new Date(Date.UTC(t.y, t.m - 1, t.d + i, 12));
-      return { i, date, iso: date.toISOString().slice(0, 10), dow: date.getUTCDay() };
+      return { i, date, iso: date.toISOString().slice(0, 10), dow: date.getUTCDay(), hol: holiday(date) };
     });
   })();
   const dayByIso = (iso) => days.find((d) => d.iso === iso);
 
   function slotsFor(day, dur) {
     const h = CFG.hours[day.dow];
-    if (!h) return [];
+    if (!h || day.hol) return [];
     const { now } = today();
     const isToday = day.i === 0;
     const takenBase = (m) => hash(day.iso + '|' + m + '|' + CFG.uid) % 100 < 30;
@@ -223,13 +256,14 @@ window.__site = 1;
     const wrap = $('[data-days]', form);
     wrap.innerHTML = days.map((d) => {
       const open = !!CFG.hours[d.dow];
-      const list = open ? slotsFor(d, dur) : [];
+      const list = open && !d.hol ? slotsFor(d, dur) : [];
       const free = list.filter((s) => s.free).length;
       const over = open && list.length > 0 && list.every((s) => s.past);
-      const dis = !open || free === 0;
-      const why = !open ? 'fermé' : over ? 'terminé' : 'complet';
+      const dis = !open || !!d.hol || free === 0;
+      const why = !open ? 'fermé' : d.hol ? 'férié' : over ? 'terminé' : 'complet';
       const tag = dis ? why : d.i === 0 ? 'auj.' : d.i === 1 ? 'demain' : fmtMon.format(d.date);
-      const aria = cap(fmtLong.format(d.date)) + (dis ? `, ${why}` : `, ${free} créneau${free > 1 ? 'x' : ''} libre${free > 1 ? 's' : ''}`);
+      const extra = d.hol ? ` (${d.hol}, horaires à confirmer)` : '';
+      const aria = cap(fmtLong.format(d.date)) + (dis ? `, ${why}${extra}` : `, ${free} créneau${free > 1 ? 'x' : ''} libre${free > 1 ? 's' : ''}`);
       return `<label class="day"><input type="radio" name="day" value="${d.iso}" aria-label="${aria}"${dis ? ' disabled' : ''}${state.day === d.iso && !dis ? ' checked' : ''}><span aria-hidden="true"><span class="day__w">${fmtW.format(d.date)}</span><span class="day__d">${d.date.getUTCDate()}</span><span class="day__m">${tag}</span></span></label>`;
     }).join('');
     if (state.day && !$(`input[value="${state.day}"]:not(:disabled)`, wrap)) { state.day = null; state.time = null; }

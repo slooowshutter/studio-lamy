@@ -397,12 +397,31 @@
 </nav>
 
 <script src="script.js" defer></script>
-<!-- sl-vswitch:start --><style>.sl-vs{position:fixed;right:14px;bottom:14px;z-index:2147483000;display:flex;gap:2px;padding:3px;border-radius:999px;background:rgba(20,20,20,.82);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.25);font:600 12px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.02em;margin:0}
-.sl-vs a,.sl-vs span{display:block;padding:7px 10px;border-radius:999px;color:rgba(255,255,255,.78);text-decoration:none;min-width:0}
-.sl-vs a:hover,.sl-vs a:focus-visible{color:#fff;background:rgba(255,255,255,.14);outline:none}
+<!-- sl-vswitch:start --><style>.sl-vs{display:none;position:fixed;right:14px;bottom:14px;z-index:2147483000;align-items:center;gap:2px;padding:3px;border-radius:999px;background:rgba(20,20,20,.86);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.25);font:600 12px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.02em;margin:0}
+html.sl-cheat .sl-vs{display:flex}
+.sl-vs a,.sl-vs span,.sl-vs button{display:block;padding:7px 10px;border-radius:999px;color:rgba(255,255,255,.78);text-decoration:none;min-width:0;font:inherit;letter-spacing:inherit;background:none;border:0;margin:0;cursor:pointer}
+.sl-vs a:hover,.sl-vs a:focus-visible,.sl-vs button:hover,.sl-vs button:focus-visible{color:#fff;background:rgba(255,255,255,.14);outline:none}
+.sl-vs nav{display:flex;gap:2px}
 .sl-vs [aria-current]{background:#fff;color:#111}
-.sl-vs .sl-off{opacity:.35}
-@media (max-width:720px){.sl-vs{flex-direction:column;right:6px;bottom:auto;top:50%;transform:translateY(-50%);padding:2px}.sl-vs a,.sl-vs span{padding:8px 7px;font-size:11px}}
-@media print{.sl-vs{display:none}}</style><nav class="sl-vs" aria-label="Versions"><a href="/allure-barber/v1/">v1</a><span aria-current="page">v2</span><a href="/allure-barber/v3/">v3</a></nav><!-- sl-vswitch:end -->
+.sl-vs .sl-off{opacity:.35;cursor:default}
+.sl-br{position:relative}
+.sl-bb{max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sl-bl{display:none;position:absolute;right:0;bottom:calc(100% + 8px);list-style:none;margin:0;padding:4px;min-width:190px;max-height:70vh;overflow:auto;border-radius:14px;background:rgba(20,20,20,.94);box-shadow:0 4px 18px rgba(0,0,0,.3)}
+.sl-bb[aria-expanded="true"]+.sl-bl{display:block}
+.sl-bl li{margin:0;padding:0}
+.sl-bl a{border-radius:10px;white-space:nowrap}
+@media (max-width:720px){.sl-vs{flex-direction:column;right:6px;bottom:auto;top:50%;transform:translateY(-50%);padding:2px}.sl-vs nav{flex-direction:column}.sl-vs a,.sl-vs span,.sl-vs button{padding:8px 7px;font-size:11px}.sl-bb{max-width:64px}.sl-bl{bottom:auto;top:0;right:calc(100% + 8px)}}
+@media print{.sl-vs{display:none!important}}</style><div class="sl-vs" role="region" aria-label="Revue"><div class="sl-br"><button type="button" class="sl-bb" aria-expanded="false" aria-haspopup="true" title="Changer de marque">Allure Barber ▾</button><ul class="sl-bl"><li><a href="/">Studio Lamy</a></li><li><a href="/allure-barber/" aria-current="page">Allure Barber</a></li><li><a href="/as-coiffure/">AS Coiffure</a></li><li><a href="/cabeleira/">Cabeleira</a></li><li><a href="/coiffure-carnot/">Coiffure Carnot</a></li><li><a href="/hi-happiness/">Hi Happiness</a></li><li><a href="/imagine-hair/">Imagine Hair</a></li><li><a href="/nada-coiffure/">Nada Coiffure</a></li><li><a href="/oxypur/">Oxypur</a></li><li><a href="/sonzs-barbershop/">SONZ’s BarberShop</a></li><li><a href="/az-barber/">AZ Barber</a></li><li><a href="/hair-style/">Hair Style</a></li><li><a href="/star-boyz/">Star Boyz</a></li></ul></div><nav aria-label="Versions"><a href="/allure-barber/v1/">v1</a><span aria-current="page">v2</span><a href="/allure-barber/v3/">v3</a></nav></div><script>(function(){var K="slCheat",d=document.documentElement;
+function set(on){try{on?localStorage.setItem(K,"1"):localStorage.removeItem(K)}catch(e){}d.classList.toggle("sl-cheat",!!on)}
+var q=null;try{q=new URLSearchParams(location.search).get("cheat")}catch(e){}
+if(q!==null)set(q!=="0");else{var on=false;try{on=localStorage.getItem(K)==="1"}catch(e){}d.classList.toggle("sl-cheat",on)}
+var buf="";window.addEventListener("keydown",function(e){var t=e.target;
+if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName||"")))return;
+if(e.ctrlKey||e.metaKey||e.altKey||!e.key||e.key.length!==1){return}
+buf=(buf+e.key.toLowerCase()).slice(-5);if(buf==="cheat"){buf="";set(!d.classList.contains("sl-cheat"))}},true);
+var b=document.querySelector(".sl-bb");if(!b)return;
+b.addEventListener("click",function(){b.setAttribute("aria-expanded",b.getAttribute("aria-expanded")==="true"?"false":"true")});
+document.addEventListener("click",function(e){if(!(e.target.closest&&e.target.closest(".sl-br")))b.setAttribute("aria-expanded","false")});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")b.setAttribute("aria-expanded","false")});})();</script><!-- sl-vswitch:end -->
 </body>
 </html>
