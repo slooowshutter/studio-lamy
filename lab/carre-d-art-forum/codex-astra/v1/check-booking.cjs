@@ -1,0 +1,32 @@
+// Exercise the production date/slot functions, without a browser or dependencies.
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const folder=process.argv[2]||__dirname;
+const html=fs.readFileSync(path.join(folder,'index.html'),'utf8');
+const source=fs.readFileSync(path.join(folder,'script.js'),'utf8');
+const entries=[...html.matchAll(/<li class="service"([^>]+)>/g)].map(match=>({dataset:Object.fromEntries([...match[1].matchAll(/data-([a-z]+)="([^"]*)"/g)].map(x=>[x[1],x[2]]))}));
+assert.equal(entries.length,6,'Six sourced services must populate the simulator');
+let timestamp='2026-11-07T14:10:00Z';
+class FixedDate extends Date{constructor(...args){super(...(args.length?args:[timestamp]));}static now(){return new Date(timestamp).getTime();}}
+const context={Date:FixedDate,Intl,document:{documentElement:{},querySelectorAll:()=>entries},matchMedia:()=>({matches:true})};
+vm.createContext(context);
+vm.runInContext(source.split('  let step=')[0]+`globalThis.check={hours,services,parisNow,dateOf,holiday,daysFromNow,slotsFor};})();`,context);
+const c=context.check,long=c.services.find(s=>s.duration===120),short=c.services.find(s=>s.duration===30);
+assert.equal(c.parisNow().minute,910,'15:10 Paris, independent of system timezone');
+assert.equal(c.daysFromNow().length,14);
+assert.equal(c.slotsFor('2026-11-08',short).length,0,'Sunday closed');
+assert.equal(c.slotsFor('2026-11-09',short).length,0,'Monday closed');
+const saturday=c.slotsFor('2026-11-07',long);
+assert.equal(saturday.at(-1).minute,960,'Two-hour service ends by 18:00 Saturday');
+assert(saturday.filter(s=>s.minute<=910).every(s=>s.disabled),'Past slots unavailable');
+assert(c.slotsFor('2026-11-10',short).some(s=>s.reason==='Déjà pris'),'Deterministic simulated occupancy on a future day');
+assert.equal(c.slotsFor('2026-11-10',long).at(-1).minute,1020,'Weekday ends by 19:00');
+assert(c.holiday('2026-11-11'));assert(c.holiday('2026-04-06'));assert(!c.holiday('2026-11-10'));
+timestamp='2026-07-01T22:30:00Z';assert.equal(c.parisNow().iso,'2026-07-02','Summer Paris date crosses UTC midnight');
+timestamp='2026-10-25T00:30:00Z';assert.equal(c.parisNow().minute,150,'Paris before DST shift');
+timestamp='2026-10-25T01:30:00Z';assert.equal(c.parisNow().minute,150,'Paris after DST shift');
+timestamp='2026-11-07T18:30:00Z';assert(c.slotsFor('2026-11-07',short).every(s=>s.disabled),'After close, all slots unavailable');
+const phoneBody=source.match(/function validPhone\(value\)\{([^\n]+)\}/)[1];
+const phone=new Function('value',phoneBody);
+for(const number of ['06 12 34 56 78','07.12.34.56.78','+33 6 12 34 56 78','0033 7 12 34 56 78'])assert(phone(number));
+for(const number of ['0326889610','06123','hello','06 12 34 56 789'])assert(!phone(number));
+console.log('PASS: 6 services, 14 days, closures, duration fit, past slots, occupancy, holidays, Paris DST, mobile validation.');
