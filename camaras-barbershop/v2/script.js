@@ -12,11 +12,11 @@ window.siteReady = true;
   } else reveals.forEach(el => el.classList.add('visible'));
 
   const services = {
-    coupe: { name: 'Coupe homme', duration: 30, price: '15 €', detail: '30 min · 15 € · exemple' },
-    barbe: { name: 'Taille de barbe', duration: 30, price: '10 €', detail: '30 min · 10 € · exemple' },
-    duo: { name: 'Coupe + barbe', duration: 60, price: 'à partir de 30 €', detail: '1 h · à partir de 30 € · à confirmer' }
+    coupe: { name: 'Coupe homme', price: 'À confirmer', detail: 'Tarif à confirmer' },
+    barbe: { name: 'Taille de barbe', price: 'À confirmer', detail: 'Tarif à confirmer' },
+    duo: { name: 'Coupe + barbe', price: 'À confirmer', detail: 'Tarif à confirmer' }
   };
-  const hours = {0:null,1:[600,1020],2:[600,1200],3:[600,1200],4:[600,1200],5:[600,1200],6:[600,1200]};
+  const hours = {0:null,1:null,2:[600,1200],3:[600,1200],4:[600,1200],5:[600,1200],6:[600,1200]};
   const state = { step:0, max:0, service:null, date:null, time:null, first:'', phone:'' };
   const content = document.getElementById('step-content');
   const steps = [...document.querySelectorAll('[data-step]')];
@@ -41,12 +41,12 @@ window.siteReady = true;
     steps.forEach((button,i) => {button.disabled = i > state.max; button.classList.toggle('current', i === state.step); if(i === state.step) button.setAttribute('aria-current','step'); else button.removeAttribute('aria-current');});
     let html = '';
     if (state.step === 0) {
-      html = `<h3 tabindex="-1">Choisir une prestation</h3><p>Tarifs indicatifs, à confirmer avec Camara's barbershop. Durées exemples.</p><div class="options">${Object.entries(services).map(([id,s])=>`<label class="option"><input type="radio" name="service" value="${id}" ${state.service===id?'checked':''}><span>${s.name}<small>${s.detail}</small></span><strong>↗</strong></label>`).join('')}</div>${nextButton('Choisir le jour',!!state.service)}`;
+      html = `<h3 tabindex="-1">Choisir une prestation</h3><p>Tarifs et durées : appelez le salon au 06 09 98 95 68.</p><div class="options">${Object.entries(services).map(([id,s])=>`<label class="option"><input type="radio" name="service" value="${id}" ${state.service===id?'checked':''}><span>${s.name}<small>${s.detail}</small></span><strong>↗</strong></label>`).join('')}</div>${nextButton('Choisir le jour',!!state.service)}`;
     } else if (state.step === 1) {
-      html = `<h3 tabindex="-1">Quel jour&nbsp;?</h3><p>Horaires indicatifs, à confirmer auprès du salon.</p><div class="date-grid">${days().map(d=>{const date=key(d), closed=!hours[d.getUTCDay()]; const label=new Intl.DateTimeFormat('fr-FR',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}).format(d);return `<button data-date="${date}" aria-pressed="${state.date===date}" ${closed?'disabled':''}>${label}<small>${closed?'fermé':'exemple'}</small></button>`}).join('')}</div>${nextButton('Choisir l’heure',!!state.date)}`;
+      html = `<h3 tabindex="-1">Quel jour&nbsp;?</h3><p>Horaires indicatifs, à confirmer auprès du salon.</p><div class="date-grid">${days().map(d=>{const date=key(d), closed=!hours[d.getUTCDay()]; const label=new Intl.DateTimeFormat('fr-FR',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}).format(d);return `<button data-date="${date}" aria-pressed="${state.date===date}" ${closed?'disabled':''}>${label}<small>${closed?'non proposé':'exemple'}</small></button>`}).join('')}</div>${nextButton('Choisir l’heure',!!state.date)}`;
     } else if (state.step === 2) {
-      const d=new Date(state.date+'T12:00:00Z'), range=hours[d.getUTCDay()], duration=services[state.service].duration, now=nowParis(); let slots='';
-      let available=0; for(let t=range[0],i=0;t+duration<=range[1];t+=30,i++){const taken=((d.getUTCDate()*13+i*7)%9<2), past=state.date===now.day && t<=now.minutes, disabled=taken||past; if(!disabled) available++; slots+=`<button data-time="${t}" aria-pressed="${state.time===t}" ${disabled?'disabled':''}>${timeString(t)}${disabled?'<small> indisponible</small>':''}</button>`;}
+      const d=new Date(state.date+'T12:00:00Z'), range=hours[d.getUTCDay()], now=nowParis(); let slots='';
+      let available=0; for(let t=range[0],i=0;t<range[1];t+=30,i++){const taken=((d.getUTCDate()*13+i*7)%9<2), past=state.date===now.day && t<=now.minutes, disabled=taken||past; if(!disabled) available++; slots+=`<button data-time="${t}" aria-pressed="${state.time===t}" ${disabled?'disabled':''}>${timeString(t)}${disabled?'<small> indisponible</small>':''}</button>`;}
       html = `<h3 tabindex="-1">À quelle heure&nbsp;?</h3><p>Créneaux fictifs pour le ${longDate(d)}. Disponibilités à confirmer.</p><div class="slot-grid">${slots}</div>${available ? '' : '<p>Aucun créneau exemple restant ce jour. Utilisez « 02 Jour » pour choisir une autre date.</p>'}${nextButton('Vos coordonnées',state.time!==null)}`;
     } else if (state.step === 3) {
       html = `<h3 tabindex="-1">Pour terminer</h3><p>Simulation uniquement&nbsp;: vos coordonnées restent dans ce navigateur et ne sont pas envoyées.</p><form id="details" novalidate><label class="field">Prénom<input id="first" name="given-name" autocomplete="given-name" required aria-describedby="first-error"><span class="error" id="first-error"></span></label><label class="field">Téléphone<input id="phone" name="tel" autocomplete="tel" inputmode="tel" type="tel" required aria-describedby="phone-error"><span class="error" id="phone-error"></span></label><p>Votre sélection est récapitulée ci-contre ou ci-dessous.</p><button class="next" type="submit">Confirmer la simulation →</button></form>`;

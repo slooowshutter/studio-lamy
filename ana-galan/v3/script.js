@@ -21,7 +21,6 @@ window.__anaGalanSite = 1;
   const shortDayNames = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
   const state = { current: 1, completed: new Set(), service: null, date: null, time: null, busy: false };
 
-  const formatPrice = value => `${value}\u00a0€`;
   const pad2 = value => String(value).padStart(2, '0');
   const dateKey = date => `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
   const formatDay = date => `${dayNames[date.getDay()]} ${date.getDate()} ${new Intl.DateTimeFormat('fr-FR', { month: 'long' }).format(date)}`;
@@ -30,9 +29,7 @@ window.__anaGalanSite = 1;
     const input = $('input[name="service"]:checked');
     return input ? {
       id: input.value,
-      name: input.dataset.name,
-      duration: Number(input.dataset.duration),
-      price: Number(input.dataset.price)
+      name: input.dataset.name
     } : null;
   };
 
@@ -133,14 +130,14 @@ window.__anaGalanSite = 1;
     function updateSummary() {
       state.service = getService();
       if (!state.service) return;
-      const pieces = [`${state.service.name} · ${state.service.duration} min · ${formatPrice(state.service.price)} · exemple`];
+      const pieces = [`${state.service.name}`];
       if (state.date) pieces.push(formatDay(state.date));
       if (state.time !== null) pieces.push(formatTime(state.time));
       summary.textContent = pieces.join(' · ');
       const recapParts = [state.service.name];
       if (state.date) recapParts.push(formatDay(state.date));
       if (state.time !== null) recapParts.push(`à ${formatTime(state.time)}`);
-      recap.textContent = `${recapParts.join(' · ')} · ${state.service.duration} min · ${formatPrice(state.service.price)} (exemple indicatif).`;
+      recap.textContent = `${recapParts.join(' · ')}.`;
     }
 
     function clearStepError(name) {
@@ -256,7 +253,7 @@ window.__anaGalanSite = 1;
       const now = new Date();
       const isToday = dateKey(now) === dateKey(state.date);
       let index = 0;
-      for (let minute = opening; minute + state.service.duration <= closing; minute += 30) {
+      for (let minute = opening; minute < closing; minute += 30) {
         const label = doc.createElement('label');
         label.className = 'time-option';
         const input = doc.createElement('input');
@@ -402,13 +399,12 @@ window.__anaGalanSite = 1;
     $('#calendar-download').addEventListener('click', () => {
       if (!state.date || state.time === null || !state.service) return;
       const start = new Date(state.date.getFullYear(), state.date.getMonth(), state.date.getDate(), Math.floor(state.time / 60), state.time % 60);
-      const end = new Date(start.getTime() + state.service.duration * 60000);
-      const description = escapeICS(`Simulation d’aperçu pour Ana Galan. Prix indicatif : ${state.service.price} euros. Aucune réservation n’a été envoyée.`);
+      const description = escapeICS(`Simulation d’aperçu pour Ana Galan. Aucune réservation n’a été envoyée.`);
       const location = escapeICS('6 rue Alexander Taylor, 64000 Pau');
       const lines = [
         'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Studio Lamy//Apercu ANA GALAN//FR', 'CALSCALE:GREGORIAN',
         'BEGIN:VEVENT', `UID:ana-galan-${Date.now()}@studiolamy.local`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')}`,
-        `DTSTART:${utcStamp(state.date, state.time)}`, `DTEND:${utcStamp(end, end.getHours() * 60 + end.getMinutes())}`,
+        `DTSTART:${utcStamp(state.date, state.time)}`,
         `SUMMARY:${escapeICS(`Simulation · ${state.service.name}`)}`, `DESCRIPTION:${description}`, `LOCATION:${location}`,
         'END:VEVENT', 'END:VCALENDAR'
       ];

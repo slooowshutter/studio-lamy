@@ -21,10 +21,10 @@ document.querySelectorAll('.filter').forEach(button => button.addEventListener('
   document.querySelectorAll('.price-row').forEach(row => { row.hidden = button.dataset.filter !== 'all' && row.dataset.category !== button.dataset.filter; });
 }));
 const services = {
-  epilation: { name: 'Épilation du corps', duration: 30, price: 25 },
-  visage: { name: 'Soin du visage', duration: 45, price: 45 },
-  mains: { name: 'Soin des mains', duration: 30, price: 25 },
-  pieds: { name: 'Soin des pieds', duration: 45, price: 35 }
+  epilation: { name: 'Épilation du corps' },
+  visage: { name: 'Soin du visage' },
+  mains: { name: 'Soin des mains' },
+  pieds: { name: 'Soin des pieds' }
 };
 const state = { step: 0, service: '', day: '', time: '', name: '', phone: '', done: false };
 const content = document.querySelector('#booking-content');
@@ -36,14 +36,14 @@ const dayLabel = key => new Intl.DateTimeFormat('fr-FR', {weekday:'long',day:'nu
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function summaryRender() {
   const s = services[state.service];
-  summary.innerHTML = s ? `<p><strong>${s.name}</strong>${s.duration} min · ${s.price} € indicatifs</p>${state.day ? `<p><strong>Jour</strong>${dayLabel(state.day)}</p>` : ''}${state.time ? `<p><strong>Heure</strong>${state.time}</p>` : ''}` : 'Votre choix apparaîtra ici.';
+  summary.innerHTML = s ? `<p><strong>${s.name}</strong>Tarif à confirmer</p>${state.day ? `<p><strong>Jour</strong>${dayLabel(state.day)}</p>` : ''}${state.time ? `<p><strong>Heure</strong>${state.time}</p>` : ''}` : 'Votre choix apparaîtra ici.';
 }
 function slotsFor(key) {
   const date = parseDate(key), weekday = date.getDay();
   if (weekday === 0) return [];
   const start = weekday === 6 ? 9*60 : 10*60, end = weekday === 6 ? 19*60 : 19*60+30;
-  const duration = services[state.service].duration, now = new Date(), result = [];
-  for (let minutes = start, i = 0; minutes + duration <= end; minutes += 30, i++) {
+  const now = new Date(), result = [];
+  for (let minutes = start, i = 0; minutes < end; minutes += 30, i++) {
     const time = `${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
     const slot = new Date(date); slot.setHours(Math.floor(minutes/60), minutes%60, 0, 0);
     result.push({time, disabled: slot <= now || (i + date.getDate()) % 5 === 0});
@@ -55,16 +55,16 @@ function render(focus = true) {
   stepButtons.forEach((b,i) => { b.disabled = state.done || (i > 0 && !state.service) || (i > 1 && !state.day) || (i > 2 && !state.time); if (i === state.step && !state.done) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current'); });
   let html = '';
   if (state.done) {
-    html = `<div class="booking-panel success"><h3 tabindex="-1">Simulation terminée.</h3><p>${esc(state.name)}, votre choix : ${services[state.service].name}, le ${dayLabel(state.day)} à ${state.time} (${services[state.service].price} € indicatifs).</p><p>Aucun rendez-vous n’a été envoyé. Pour joindre l’institut, appelez le <a href="tel:+33556319834">05 56 31 98 34</a>.</p><button class="booking-action" type="button" data-reset>Recommencer</button></div>`;
+    html = `<div class="booking-panel success"><h3 tabindex="-1">Simulation terminée.</h3><p>${esc(state.name)}, votre choix : ${services[state.service].name}, le ${dayLabel(state.day)} à ${state.time}.</p><p>Aucun rendez-vous n’a été envoyé. Pour joindre l’institut, appelez le <a href="tel:+33556319834">05 56 31 98 34</a>.</p><button class="booking-action" type="button" data-reset>Recommencer</button></div>`;
   } else if (state.step === 0) {
-    html = `<div class="booking-panel"><h3 tabindex="-1">Choisir une prestation.</h3><p class="booking-note">Tarifs indicatifs, à confirmer avec Epil &amp; You. Prix et durées sont des exemples.</p><fieldset style="border:0;padding:0;margin:0"><legend class="eyebrow">PRESTATION</legend>${Object.entries(services).map(([id,s]) => `<label class="service-option"><input type="radio" name="service" value="${id}" ${state.service===id?'checked':''}><span>${s.name}<small>${s.duration} min · exemple</small></span><strong>${s.price} €</strong></label>`).join('')}</fieldset><button class="booking-action" type="button" data-next ${state.service?'':'disabled'}>Choisir un jour →</button></div>`;
+    html = `<div class="booking-panel"><h3 tabindex="-1">Choisir une prestation.</h3><p class="booking-note">Prestations et tarifs à confirmer par téléphone.</p><fieldset style="border:0;padding:0;margin:0"><legend class="eyebrow">PRESTATION</legend>${Object.entries(services).map(([id,s]) => `<label class="service-option"><input type="radio" name="service" value="${id}" ${state.service===id?'checked':''}><span>${s.name}<small>À confirmer</small></span><strong>À confirmer</strong></label>`).join('')}</fieldset><button class="booking-action" type="button" data-next ${state.service?'':'disabled'}>Choisir un jour →</button></div>`;
   } else if (state.step === 1) {
     const days = Array.from({length:14},(_,i)=> { const d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+i); const key=dateKey(d), closed=d.getDay()===0; return `<button type="button" data-day="${key}" class="${key===state.day?'selected':''}" ${closed?'disabled':''} aria-pressed="${key===state.day}">${new Intl.DateTimeFormat('fr-FR',{weekday:'short',day:'numeric',month:'short'}).format(d)}<small>${closed?'fermé':'à confirmer'}</small></button>`; }).join('');
     html = `<div class="booking-panel"><h3 tabindex="-1">Choisir un jour.</h3><p class="booking-note">Horaires indicatifs à confirmer. Dimanche fermé selon Pages Jaunes.</p><div class="days">${days}</div><button class="booking-action" type="button" data-next ${state.day?'':'disabled'}>Choisir une heure →</button></div>`;
   } else if (state.step === 2) {
     html = `<div class="booking-panel"><h3 tabindex="-1">Choisir une heure.</h3><p class="booking-note">${dayLabel(state.day)} · créneaux fictifs. Les heures barrées sont indisponibles dans cette simulation.</p><div class="slots">${slotsFor(state.day).map(s => `<button type="button" data-time="${s.time}" ${s.disabled?'disabled':''} class="${state.time===s.time?'selected':''}" aria-pressed="${state.time===s.time}">${s.time}</button>`).join('')}</div><button class="booking-action" type="button" data-next ${state.time?'':'disabled'}>Vos coordonnées →</button></div>`;
   } else {
-    html = `<div class="booking-panel"><h3 tabindex="-1">Vos coordonnées.</h3><p class="booking-note">Simulation uniquement. Ces informations restent dans votre navigateur.</p><form id="booking-form" novalidate><label class="field"><span>Prénom</span><input name="name" autocomplete="given-name" value="${esc(state.name)}" aria-describedby="name-error" required><small class="error" id="name-error"></small></label><label class="field"><span>Téléphone mobile</span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(state.phone)}" aria-describedby="phone-error" required><small class="error" id="phone-error"></small></label><p class="booking-note">${services[state.service].name} · ${dayLabel(state.day)} à ${state.time} · ${services[state.service].price} € indicatifs</p><button class="booking-action" type="submit">Confirmer la simulation →</button></form></div>`;
+    html = `<div class="booking-panel"><h3 tabindex="-1">Vos coordonnées.</h3><p class="booking-note">Simulation uniquement. Ces informations restent dans votre navigateur.</p><form id="booking-form" novalidate><label class="field"><span>Prénom</span><input name="name" autocomplete="given-name" value="${esc(state.name)}" aria-describedby="name-error" required><small class="error" id="name-error"></small></label><label class="field"><span>Téléphone mobile</span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(state.phone)}" aria-describedby="phone-error" required><small class="error" id="phone-error"></small></label><p class="booking-note">${services[state.service].name} · ${dayLabel(state.day)} à ${state.time} · tarif à confirmer</p><button class="booking-action" type="submit">Confirmer la simulation →</button></form></div>`;
   }
   content.innerHTML = html;
   const panel = content.querySelector('.booking-panel');

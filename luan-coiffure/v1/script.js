@@ -3,11 +3,11 @@
   const root = document.documentElement;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const services = [
-    { id: 'coupe-femme', name: 'Coupe femme', duration: 45, price: 35 },
-    { id: 'coupe-homme', name: 'Coupe homme', duration: 30, price: 23 },
-    { id: 'barbe', name: 'Taille de barbe', duration: 20, price: 15 }
+    { id: 'coupe-femme', name: 'Coiffure mixte' },
+    { id: 'coupe-homme', name: 'Rasage' },
+    { id: 'barbe', name: 'Taille de barbe' }
   ];
-  const hours = { 0: null, 1: [720, 1140], 2: [540, 1140], 3: [540, 1140], 4: [540, 1140], 5: [540, 1140], 6: [480, 1020] };
+  const hours = { 0: null, 1: null, 2: [540, 1140], 3: [540, 1140], 4: [540, 1140], 5: [540, 1140], 6: [480, 1020] };
   const state = { step: 0, service: '', date: '', time: null, firstName: '', phone: '', complete: false };
   const content = document.querySelector('#step-content');
   const app = document.querySelector('#booking-app');
@@ -60,30 +60,30 @@
     const easter = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return [1, 39, 50].some(offset => keyForOffset(easter, offset) === key);
   }
-  function slotsFor(key, duration) {
+  function slotsFor(key) {
     const schedule = hours[dateObject(key).getUTCDay()];
     if (!schedule) return [];
     const now = parisNow();
     const seed = Number(key.replaceAll('-', ''));
     const slots = [];
-    for (let start = schedule[0]; start + duration <= schedule[1]; start += 15) {
+    for (let start = schedule[0]; start < schedule[1]; start += 15) {
       const past = key < now.date || (key === now.date && start <= now.minutes);
-      const taken = (seed + Math.floor(start / 15) * 7 + duration) % 6 === 0;
+      const taken = (seed + Math.floor(start / 15) * 7) % 6 === 0;
       slots.push({ start, disabled: past || taken, reason: past ? 'Passé' : taken ? 'Déjà pris' : '' });
     }
     return slots;
   }
   function slotAvailable() {
     const service = selectedService();
-    return service && state.date && slotsFor(state.date, service.duration).some(slot => slot.start === state.time && !slot.disabled);
+    return service && state.date && slotsFor(state.date).some(slot => slot.start === state.time && !slot.disabled);
   }
   function announce(message) { status.textContent = message; }
   function summary() {
     const service = selectedService();
-    document.querySelector('#summary-service').textContent = service ? `${service.name} · ${service.duration}\u00a0min · exemple` : 'Une prestation à choisir';
+    document.querySelector('#summary-service').textContent = service ? service.name : 'Une prestation à choisir';
     document.querySelector('#summary-date').textContent = state.date ? longDate(state.date) : 'Un jour à choisir';
     document.querySelector('#summary-time').textContent = state.time !== null ? clock(state.time) : 'Une heure à choisir';
-    document.querySelector('#summary-price').textContent = service ? `${service.price}\u00a0€ · à confirmer` : '—';
+    document.querySelector('#summary-price').textContent = 'À confirmer';
     document.querySelector('#selection-titre').innerHTML = state.complete ? 'Une date<br><em>pour l’exemple.</em>' : 'Une date<br><em>à écrire.</em>';
     if (pointerAction && !reducedMotion.matches) {
       summaryAnimation?.cancel();
@@ -94,30 +94,29 @@
     return `<div class="step-actions">${back ? '<button type="button" class="back-button" data-back>← Retour</button>' : ''}<button type="button" class="button cream" data-next>${next} <span aria-hidden="true">→</span></button></div><p class="booking-error" id="step-error" role="status" aria-live="polite"></p>`;
   }
   function renderServices() {
-    return `<h3 id="step-title" tabindex="-1">Pour quelle prestation&nbsp;?</h3><p>Tarifs indicatifs, à confirmer avec Luan Coiffure. Intitulés, durées et prix d’exemple.</p><fieldset class="services-choices" aria-describedby="step-error"><legend class="sr-only">Choisir une prestation d’exemple</legend>${services.map(service => `<label class="choice"><input type="radio" name="service" value="${service.id}" ${state.service === service.id ? 'checked' : ''}><span><span class="choice-name">${service.name}</span><span class="choice-detail">${service.duration}&nbsp;min · exemple, à confirmer</span></span><span class="choice-price">${service.price}&nbsp;€</span></label>`).join('')}</fieldset>${actions('Choisir le jour', false)}`;
+    return `<h3 id="step-title" tabindex="-1">Pour quelle prestation&nbsp;?</h3><p>Tarifs : appelez le salon au 09 81 30 08 69.</p><fieldset class="services-choices" aria-describedby="step-error"><legend class="sr-only">Choisir une activité déclarée</legend>${services.map(service => `<label class="choice"><input type="radio" name="service" value="${service.id}" ${state.service === service.id ? 'checked' : ''}><span><span class="choice-name">${service.name}</span><span class="choice-detail">Activité déclarée</span></span><span class="choice-price">À confirmer</span></label>`).join('')}</fieldset>${actions('Choisir le jour', false)}`;
   }
   function renderDays() {
     const today = parisNow().date;
-    const duration = selectedService().duration;
     const days = Array.from({ length: 14 }, (_, offset) => {
       const key = keyForOffset(today, offset);
       const date = dateObject(key);
       const closed = !hours[date.getUTCDay()];
-      const exhausted = !closed && !slotsFor(key, duration).some(slot => !slot.disabled);
+      const exhausted = !closed && !slotsFor(key).some(slot => !slot.disabled);
       const isHoliday = holiday(key);
-      const note = closed ? 'Fermé' : exhausted ? 'Aucun créneau' : isHoliday ? 'Férié*' : offset === 0 ? 'Aujourd’hui' : '';
+      const note = date.getUTCDay() === 1 ? 'À confirmer' : closed ? 'Fermé' : exhausted ? 'Aucun créneau' : isHoliday ? 'Férié*' : offset === 0 ? 'Aujourd’hui' : '';
       return `<label class="day-option"><input type="radio" name="day" value="${key}" ${state.date === key ? 'checked' : ''} ${closed || exhausted ? 'disabled' : ''} aria-label="${longDate(key)}${note ? `, ${note}` : ''}"><span>${shortDayFormat.format(date)}</span><strong>${date.getUTCDate()}</strong><span>${monthFormat.format(date)}</span><small>${note || '&nbsp;'}</small></label>`;
     }).join('');
-    return `<h3 id="step-title" tabindex="-1">Quel jour vous conviendrait&nbsp;?</h3><p>Les 14 prochains jours. Dimanche fermé. Lundi dès 12&nbsp;h, à confirmer.</p><fieldset class="day-grid" aria-describedby="day-note step-error"><legend class="sr-only">Choisir un jour</legend>${days}</fieldset><p class="fine-print" id="day-note">* Jours fériés&nbsp;: ouverture à confirmer. Les créneaux proposés sont fictifs.</p>${actions('Choisir l’heure')}`;
+    return `<h3 id="step-title" tabindex="-1">Quel jour vous conviendrait&nbsp;?</h3><p>Les 14 prochains jours. Dimanche fermé. Lundi : appelez le salon.</p><fieldset class="day-grid" aria-describedby="day-note step-error"><legend class="sr-only">Choisir un jour</legend>${days}</fieldset><p class="fine-print" id="day-note">* Jours fériés&nbsp;: ouverture à confirmer. Les créneaux proposés sont fictifs.</p>${actions('Choisir l’heure')}`;
   }
   function renderTimes() {
     const service = selectedService();
     const schedule = hours[dateObject(state.date).getUTCDay()];
-    return `<h3 id="step-title" tabindex="-1">À quelle heure&nbsp;?</h3><p>${longDate(state.date)} · ${clock(schedule[0])}–${clock(schedule[1])}${holiday(state.date) ? ' · jour férié, ouverture à confirmer' : ''}. Disponibilités simulées.</p><fieldset class="time-grid" aria-describedby="step-error"><legend class="sr-only">Choisir une heure d’exemple</legend>${slotsFor(state.date, service.duration).map(slot => `<label class="time-option"><input type="radio" name="time" value="${slot.start}" ${slot.start === state.time ? 'checked' : ''} ${slot.disabled ? 'disabled' : ''} aria-label="${clock(slot.start)}${slot.reason ? `, ${slot.reason}` : ''}"><span class="slot-time">${clock(slot.start)}</span>${slot.reason ? `<small>${slot.reason}</small>` : ''}</label>`).join('')}</fieldset>${actions('Continuer')}`;
+    return `<h3 id="step-title" tabindex="-1">À quelle heure&nbsp;?</h3><p>${longDate(state.date)} · ${clock(schedule[0])}–${clock(schedule[1])}${holiday(state.date) ? ' · jour férié, ouverture à confirmer' : ''}. Disponibilités simulées.</p><fieldset class="time-grid" aria-describedby="step-error"><legend class="sr-only">Choisir une heure d’exemple</legend>${slotsFor(state.date).map(slot => `<label class="time-option"><input type="radio" name="time" value="${slot.start}" ${slot.start === state.time ? 'checked' : ''} ${slot.disabled ? 'disabled' : ''} aria-label="${clock(slot.start)}${slot.reason ? `, ${slot.reason}` : ''}"><span class="slot-time">${clock(slot.start)}</span>${slot.reason ? `<small>${slot.reason}</small>` : ''}</label>`).join('')}</fieldset>${actions('Continuer')}`;
   }
   function renderContact() {
     const service = selectedService();
-    return `<h3 id="step-title" tabindex="-1">À quel prénom&nbsp;?</h3><p>Vous pouvez utiliser des coordonnées d’exemple. Elles restent dans cette page, sans stockage ni envoi.</p><form class="contact-form" id="contact-form" novalidate><div class="field-group"><label for="first-name">Prénom</label><input id="first-name" name="given-name" autocomplete="given-name" maxlength="60" required value="${escapeHtml(state.firstName)}" aria-describedby="name-error"><p class="booking-error" id="name-error" aria-live="polite"></p></div><div class="field-group"><label for="phone">Téléphone mobile français</label><input id="phone" name="tel" type="tel" autocomplete="tel" inputmode="tel" maxlength="24" required value="${escapeHtml(state.phone)}" aria-describedby="phone-hint phone-error"><p class="fine-print" id="phone-hint">Format&nbsp;: 06 ou 07, suivi de 8 chiffres ; +33 accepté.</p><p class="booking-error" id="phone-error" aria-live="polite"></p></div><div class="contact-recap"><strong>Votre rendez-vous d’exemple</strong>${service.name} · ${service.duration}&nbsp;min<br>${longDate(state.date)} à ${clock(state.time)}<br>${service.price}&nbsp;€ · exemple de tarif, à confirmer</div><p class="form-note">Aucune réservation ne sera faite. Pour un vrai rendez-vous, appelez le 09 81 30 08 69.</p><div class="step-actions"><button type="button" class="back-button" data-back>← Retour</button><button type="submit" class="button cream">Terminer l’exemple <span aria-hidden="true">↗</span></button></div><p class="booking-error" id="step-error" role="status" aria-live="polite"></p></form>`;
+    return `<h3 id="step-title" tabindex="-1">À quel prénom&nbsp;?</h3><p>Vous pouvez utiliser des coordonnées d’exemple. Elles restent dans cette page, sans stockage ni envoi.</p><form class="contact-form" id="contact-form" novalidate><div class="field-group"><label for="first-name">Prénom</label><input id="first-name" name="given-name" autocomplete="given-name" maxlength="60" required value="${escapeHtml(state.firstName)}" aria-describedby="name-error"><p class="booking-error" id="name-error" aria-live="polite"></p></div><div class="field-group"><label for="phone">Téléphone mobile français</label><input id="phone" name="tel" type="tel" autocomplete="tel" inputmode="tel" maxlength="24" required value="${escapeHtml(state.phone)}" aria-describedby="phone-hint phone-error"><p class="fine-print" id="phone-hint">Format&nbsp;: 06 ou 07, suivi de 8 chiffres ; +33 accepté.</p><p class="booking-error" id="phone-error" aria-live="polite"></p></div><div class="contact-recap"><strong>Votre rendez-vous d’exemple</strong>${service.name}<br>${longDate(state.date)} à ${clock(state.time)}<br>Tarif à confirmer</div><p class="form-note">Aucune réservation ne sera faite. Pour un vrai rendez-vous, appelez le 09 81 30 08 69.</p><div class="step-actions"><button type="button" class="back-button" data-back>← Retour</button><button type="submit" class="button cream">Terminer l’exemple <span aria-hidden="true">↗</span></button></div><p class="booking-error" id="step-error" role="status" aria-live="polite"></p></form>`;
   }
   function updateSteps() {
     stepButtons.forEach((button, index) => {
@@ -152,7 +151,7 @@
   function nextStep() {
     if (state.step === 0 && !state.service) return stepError('Choisissez une prestation d’exemple pour continuer.');
     if (state.step === 1 && !state.date) return stepError('Choisissez un jour pour continuer.');
-    if (state.step === 1 && !slotsFor(state.date, selectedService().duration).some(slot => !slot.disabled)) {
+    if (state.step === 1 && !slotsFor(state.date).some(slot => !slot.disabled)) {
       state.date = ''; state.time = null; showStep(1); return stepError('Ce jour n’a plus de créneau d’exemple. Choisissez un autre jour.');
     }
     if (state.step === 2 && !slotAvailable()) return stepError('Choisissez une heure disponible. Les horaires passés ne peuvent pas être sélectionnés.');
@@ -170,19 +169,10 @@
     error.textContent = message;
     return !message;
   }
-  function createCalendar() {
-    if (calendarUrl) URL.revokeObjectURL(calendarUrl);
-    const service = selectedService();
-    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-    const localStamp = minutes => `${state.date.replaceAll('-', '')}T${String(Math.floor(minutes / 60)).padStart(2, '0')}${String(minutes % 60).padStart(2, '0')}00`;
-    const calendar = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Studio Lamy//Apercu Luan Coiffure//FR', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT', `UID:exemple-${Date.now()}@preview.invalid`, `DTSTAMP:${stamp}`, `DTSTART;TZID=Europe/Paris:${localStamp(state.time)}`, `DTEND;TZID=Europe/Paris:${localStamp(state.time + service.duration)}`, 'SUMMARY:SIMULATION - Luan Coiffure - aucun rendez-vous reserve', 'DESCRIPTION:Exemple uniquement. Rien n’a ete transmis au salon. Appelez le 09 81 30 08 69 pour reserver.', 'STATUS:TENTATIVE', 'END:VEVENT', 'END:VCALENDAR', ''].join('\r\n');
-    calendarUrl = URL.createObjectURL(new Blob([calendar], { type: 'text/calendar;charset=utf-8' }));
-  }
   function success() {
     state.complete = true;
-    createCalendar();
     const service = selectedService();
-    content.innerHTML = `<span class="success-mark">Démonstration terminée</span><h3 class="success-title" id="step-title" tabindex="-1">Votre exemple<br>est prêt.</h3><p>Merci ${escapeHtml(state.firstName.trim())}. Rien n’a été envoyé au salon et aucun rendez-vous n’est réservé.</p><div class="success-recap">${service.name} · ${service.duration}&nbsp;min<br>${longDate(state.date)} à ${clock(state.time)}<br>${service.price}&nbsp;€ · exemple de tarif, à confirmer</div><div class="success-actions"><a class="button cream" href="tel:+33981300869">Appeler pour réserver <span aria-hidden="true">↗</span></a><a class="text-link" href="${calendarUrl}" download="luan-coiffure-SIMULATION.ics">Enregistrer l’exemple (.ics)</a></div><button type="button" class="back-button" data-reset>Recommencer la démonstration</button>`;
+    content.innerHTML = `<span class="success-mark">Démonstration terminée</span><h3 class="success-title" id="step-title" tabindex="-1">Votre exemple<br>est prêt.</h3><p>Merci ${escapeHtml(state.firstName.trim())}. Rien n’a été envoyé au salon et aucun rendez-vous n’est réservé.</p><div class="success-recap">${service.name}<br>${longDate(state.date)} à ${clock(state.time)}<br>Tarif à confirmer</div><div class="success-actions"><a class="button cream" href="tel:+33981300869">Appeler pour réserver <span aria-hidden="true">↗</span></a><a class="text-link" href="tel:+33981300869">Tarifs : appeler le salon</a></div><button type="button" class="back-button" data-reset>Recommencer la démonstration</button>`;
     updateSteps();
     summary();
     content.querySelector('#step-title').focus({ preventScroll: true });

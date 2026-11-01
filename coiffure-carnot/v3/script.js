@@ -311,7 +311,7 @@ window.__site = 1;
   if (nojs) nojs.remove();
 
   const services = $$('.item[data-id]').map((r) => ({
-    id: r.dataset.id, name: r.dataset.name, min: +r.dataset.min, price: +r.dataset.price, tbc: r.hasAttribute('data-tbc')
+    id: r.dataset.id, name: r.dataset.name
   }));
   const svcById = (id) => services.find((s) => s.id === id);
   const panels = $$('.panel', form);
@@ -359,13 +359,12 @@ window.__site = 1;
     <label class="opt">
       <input type="radio" name="service" value="${s.id}">
       <span class="opt__box" aria-hidden="true"></span>
-      <span class="opt__name">${s.name}<small>${s.min}${NB}min${s.tbc ? ` · proposée${NB}? à confirmer` : ''}</small></span>
-      <span class="opt__price">${s.price}${NB}€</span>
+      <span class="opt__name">${s.name}</span><span class="opt__price">Sur appel</span>
     </label>`).join('');
 
   function renderDays() {
     const svc = svcById(state.service);
-    const dur = svc ? svc.min : CFG.step;
+    const dur = CFG.step;
     const wrap = $('[data-days]', form);
     wrap.innerHTML = days.map((d) => {
       const open = !!CFG.hours[d.dow] && !d.holiday;
@@ -373,9 +372,9 @@ window.__site = 1;
       const free = list.filter((s) => s.free).length;
       const over = open && list.length > 0 && list.every((s) => s.past);
       const dis = !open || free === 0;
-      const why = d.holiday && CFG.hours[d.dow] ? 'férié' : !open ? 'fermé' : over ? 'terminé' : 'complet';
+      const why = d.holiday && CFG.hours[d.dow] ? 'férié' : !open ? 'fermé' : over ? 'terminé' : 'aucun horaire fictif';
       const tag = dis ? why : d.i === 0 ? 'auj.' : d.i === 1 ? 'demain' : fmtMon.format(d.date);
-      const aria = cap(fmtLong.format(d.date)) + (dis ? `, ${why}` : `, ${free} créneau${free > 1 ? 'x' : ''} libre${free > 1 ? 's' : ''}`);
+      const aria = cap(fmtLong.format(d.date)) + (dis ? `, ${why}` : `, ${free} horaire${free > 1 ? 's' : ''} fictif${free > 1 ? 's' : ''}`);
       return `<label class="day"><input type="radio" name="day" value="${d.iso}" aria-label="${aria}"${dis ? ' disabled' : ''}${state.day === d.iso && !dis ? ' checked' : ''}><span aria-hidden="true"><span class="day__w">${fmtW.format(d.date)}</span><span class="day__d">${d.date.getUTCDate()}</span><span class="day__m">${tag}</span></span></label>`;
     }).join('');
     if (state.day && !$(`input[value="${state.day}"]:not(:disabled)`, wrap)) { state.day = null; state.time = null; }
@@ -387,12 +386,12 @@ window.__site = 1;
     const wrap = $('[data-slots]', form);
     const note = $('[data-slots-note]', form);
     if (!svc || !day) { wrap.innerHTML = ''; return; }
-    const slots = slotsFor(day, svc.min);
+    const slots = slotsFor(day, CFG.step);
     const free = slots.filter((s) => s.free).length;
     const pause = CFG.hours[day.dow] && CFG.hours[day.dow].length > 1 ? ` Fermé de ${hhmm(CFG.hours[day.dow][0][1])} à ${hhmm(CFG.hours[day.dow][1][0])}.` : '';
-    note.textContent = `${cap(fmtLong.format(day.date))} · ${free} créneau${free > 1 ? 'x' : ''} libre${free > 1 ? 's' : ''} pour ${svc.name.toLowerCase()} (${svc.min}${NB}min).${pause}`;
+    note.textContent = `${cap(fmtLong.format(day.date))} · ${free} horaire${free > 1 ? 's' : ''} fictif${free > 1 ? 's' : ''} pour ${svc.name.toLowerCase()}. Simulation, disponibilité non vérifiée.${pause}`;
     if (!free) {
-      wrap.innerHTML = `<p class="slots__empty">Plus aucun créneau ce jour-là. Choisissez un autre jour, ou appelez le ${CFG.phone.replace(/ /g, NB)}.</p>`;
+      wrap.innerHTML = `<p class="slots__empty">Aucun horaire fictif pour ce jour. Choisissez un autre jour, ou appelez le ${CFG.phone.replace(/ /g, NB)}.</p>`;
       return;
     }
     const groups = [['Matin', 0, 720], ['Après-midi', 720, 1020], ['Fin de journée', 1020, 1440]];
@@ -401,7 +400,7 @@ window.__site = 1;
       if (!list.length) return '';
       return `<div class="slots__g" role="group" aria-labelledby="sg-${gi}"><h4 id="sg-${gi}">${label}</h4><div class="slots__grid">${
         list.map((s) => {
-          const why = s.past ? ', passé' : s.taken ? ', déjà pris' : '';
+          const why = s.past ? ', passé' : s.taken ? ', indisponible dans la simulation' : '';
           return `<label class="slot"><input type="radio" name="time" value="${s.m}" aria-label="${hhmm(s.m)}${why}"${s.free ? '' : ' disabled'}${state.time === s.m && s.free ? ' checked' : ''}><span aria-hidden="true"><time datetime="${day.iso}T${iso2(s.m)}">${hhmm(s.m)}</time></span></label>`;
         }).join('')
       }</div></div>`;
@@ -415,22 +414,22 @@ window.__site = 1;
     if (!svc || !day || state.time == null) return;
     $('[data-recap]', form).innerHTML =
       `<strong>${svc.name}</strong><span>${cap(fmtLong.format(day.date))} à ${hhmm(state.time)}</span>` +
-      `<span>${svc.min}${NB}min · <span class="recap__price">${svc.price}${NB}€</span> (tarif indicatif)</span><small>${CFG.address}</small>`;
+      `<small>${CFG.address} · Simulation</small>`;
   }
 
   function updateSummary() {
     const svc = svcById(state.service);
     const day = dayByIso(state.day);
     const set = (k, v) => { const n = $(`[data-sum="${k}"]`); if (n) n.textContent = v; };
-    set('service', svc ? `${svc.name}, ${svc.min}${NB}min` : 'à choisir');
+    set('service', svc ? svc.name : 'à choisir');
     set('day', day ? fmtLong.format(day.date) : '—');
     set('time', state.time != null ? hhmm(state.time) : '—');
-    set('price', svc ? `${svc.price}${NB}€` : '—');
+    set('price', 'Par téléphone');
     const done = state.step === 5;
     const pick = $('[data-pick]', form);
     if (pick) {
       const bits = [];
-      if (svc) bits.push(`${svc.name} · ${svc.min}${NB}min · ${svc.price}${NB}€`);
+      if (svc) bits.push(svc.name);
       if (day) bits.push(cap(fmtLong.format(day.date)));
       if (state.time != null) bits.push(hhmm(state.time));
       pick.hidden = !svc || done;
@@ -502,7 +501,7 @@ window.__site = 1;
       if (state.day) {
         renderDays();
         if (state.day && state.time != null) {
-          const ok = slotsFor(dayByIso(state.day), svcById(state.service).min).some((s) => s.m === state.time && s.free);
+          const ok = slotsFor(dayByIso(state.day), CFG.step).some((s) => s.m === state.time && s.free);
           if (!ok) state.time = null;
         }
       }
@@ -570,7 +569,7 @@ window.__site = 1;
     const day = dayByIso(state.day);
     $('[data-done-title]', form).textContent = `C’est noté, ${state.name}.`;
     $('[data-done-when]', form).textContent =
-      `${cap(fmtLong.format(day.date))} à ${hhmm(state.time)} · ${svc.name}, ${svc.min}${NB}min, ${svc.price}${NB}€ (indicatif). 90 rue François Chénieux.`;
+      `${cap(fmtLong.format(day.date))} à ${hhmm(state.time)} · ${svc.name}. Simulation, 90 rue François Chénieux.`;
     go(5);
   });
 
@@ -623,7 +622,6 @@ window.__site = 1;
       `UID:${stamp(start)}-${svc.id}@${CFG.uid}`,
       `DTSTAMP:${stamp(Date.now())}`,
       `DTSTART:${stamp(start)}`,
-      `DTEND:${stamp(start + svc.min * 60000)}`,
       `SUMMARY:${esc(svc.name + ' · ' + CFG.shop)}`,
       `LOCATION:${esc(CFG.address)}`,
       `DESCRIPTION:${esc('Simulation depuis un aperçu non officiel : ce rendez-vous n’a pas été transmis au salon. Tél. ' + CFG.phone)}`,

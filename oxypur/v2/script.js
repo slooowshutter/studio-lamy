@@ -12,8 +12,7 @@ window.__site = 1;
     hours: { 0: null, 1: null, 2: null, 3: null, 4: [510, 1140], 5: [510, 1140], 6: [540, 1080] },
     step: 30,
     days: 14,
-    uid: 'apercu.oxypur.v2',
-    ics: 'rdv-oxypur.ics'
+    uid: 'apercu.oxypur.v2'
   };
   const DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
   const HEAD = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'];
@@ -48,8 +47,6 @@ window.__site = 1;
   const fmtShort = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
   const fmtDM = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', timeZone: 'UTC' });
   const fmtMon = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' });
-  const euro = (n) => `${n}${NB}€`;
-  const dur = (m) => (m < 60 ? `${m}${NB}min` : `${Math.floor(m / 60)}${NB}h${m % 60 ? NB + pad(m % 60) : ''}`);
   const short = (d) => fmtShort.format(d).replace(/\./g, '');
 
   function easter(y) {
@@ -209,8 +206,7 @@ window.__site = 1;
   if (nojs) nojs.remove();
 
   const services = $$('.row[data-id]').map((r) => ({
-    id: r.dataset.id, name: r.dataset.name, min: +r.dataset.min, price: +r.dataset.price,
-    cat: r.closest('.col').dataset.cat
+    id: r.dataset.id, name: r.dataset.name, cat: r.closest('.col').dataset.cat
   }));
   const svcById = (id) => services.find((s) => s.id === id);
   const groups = $$('.col').map((c) => ({ cat: c.dataset.cat, label: $('.col__t', c).lastChild.textContent.trim() }));
@@ -234,7 +230,7 @@ window.__site = 1;
     });
   })();
   const dayByIso = (v) => days.find((d) => d.iso === v);
-  const curLength = () => { const s = svcById(state.service); return s ? s.min : CFG.step; };
+  const curLength = () => CFG.step;
 
   function slotsFor(day, length) {
     const h = CFG.hours[day.dow];
@@ -260,8 +256,8 @@ window.__site = 1;
       list.map((s) => `
       <label class="opt">
         <input type="radio" name="service" value="${s.id}">
-        <span class="opt__name">${s.name}<small>${dur(s.min)} · indicatif</small></span>
-        <span class="opt__price">${euro(s.price)}</span>
+        <span class="opt__name">${s.name}<small>Tarif et durée sur appel</small></span>
+        <span class="opt__price">sur appel</span>
       </label>`).join('')
     }</div>`;
   }).join('');
@@ -290,13 +286,13 @@ window.__site = 1;
         const free = list.filter((s) => s.free).length;
         const over = open && list.length > 0 && list.every((s) => s.past);
         const dis = !open || free === 0;
-        const why = shut ? 'fermé' : fer ? 'férié' : over ? 'terminé' : 'complet';
+        const why = shut ? 'fermé' : fer ? 'férié' : over ? 'terminé' : 'simulation complète';
         const tag = dis ? why : d.i === 0 ? 'auj.' : d.i === 1 ? 'demain' : fmtMon.format(d.date);
         let aria = cap(fmtLong.format(d.date));
         if (shut) aria += ', fermé (à confirmer)';
         else if (fer) aria += ', jour férié, ouverture à confirmer';
         else if (dis) aria += `, ${why}`;
-        else aria += `, ${free} créneau${free > 1 ? 'x' : ''} libre${free > 1 ? 's' : ''}`;
+        else aria += `, ${free} créneau${free > 1 ? 'x' : ''} simulé${free > 1 ? 's' : ''}`;
         const pick = state.day === d.iso && !dis;
         return `<label class="day${pick ? ' is-pick' : ''}"><input type="radio" name="day" value="${d.iso}" aria-label="${aria}"${dis ? ' disabled' : ''}${pick ? ' checked' : ''}><span class="day__c" aria-hidden="true"><span class="day__d">${d.date.getUTCDate()}</span><span class="day__m">${tag}</span></span></label>`;
       }).join('') + '</div>';
@@ -312,12 +308,12 @@ window.__site = 1;
     const wrap = $('[data-slots]', form);
     const note = $('[data-slots-note]', form);
     if (!svc || !day) { wrap.innerHTML = ''; return; }
-    const slots = slotsFor(day, svc.min);
+    const slots = slotsFor(day, CFG.step);
     const free = slots.filter((s) => s.free).length;
     const h = CFG.hours[day.dow];
-    note.textContent = `${cap(fmtLong.format(day.date))}, ouvert de ${prose(h[0])} à ${prose(h[1])} · ${free} créneau${free > 1 ? 'x' : ''} libre${free > 1 ? 's' : ''} pour ${svc.name.toLowerCase()} (${dur(svc.min)}).`;
+    note.textContent = `${cap(fmtLong.format(day.date))}, ouvert de ${prose(h[0])} à ${prose(h[1])} · simulation : ${free} créneau${free > 1 ? 'x' : ''} simulé${free > 1 ? 's' : ''} pour ${svc.name.toLowerCase()}.`;
     if (!free) {
-      wrap.innerHTML = `<p class="slots__empty">Plus aucun créneau ce jour-là. Choisissez un autre jour, ou appelez le ${CFG.phone.replace(/ /g, NB)}.</p>`;
+      wrap.innerHTML = `<p class="slots__empty">Plus aucun créneau dans cette simulation ce jour-là. Choisissez un autre jour, ou appelez le ${CFG.phone.replace(/ /g, NB)}.</p>`;
       return;
     }
     const parts = [['Matin', 0, 720], ['Après-midi', 720, 1020], ['Fin de journée', 1020, 1440]];
@@ -326,7 +322,7 @@ window.__site = 1;
       if (!list.length) return '';
       return `<div class="slots__g" role="group" aria-labelledby="sg-${gi}"><h4 id="sg-${gi}">${label}</h4><div class="slots__grid">${
         list.map((s) => {
-          const why = s.past ? ', passé' : s.taken ? ', déjà pris' : '';
+          const why = s.past ? ', passé' : s.taken ? ', indisponible dans la simulation' : '';
           return `<label class="slot"><input type="radio" name="time" value="${s.m}" aria-label="${slotTime(s.m)}${why}"${s.free ? '' : ' disabled'}${state.time === s.m && s.free ? ' checked' : ''}><span aria-hidden="true"><time datetime="${day.iso}T${iso(s.m)}">${slotTime(s.m)}</time></span></label>`;
         }).join('')
       }</div></div>`;
@@ -340,7 +336,7 @@ window.__site = 1;
     if (!svc || !day || state.time == null) return;
     $('[data-recap]', form).innerHTML =
       `<strong>${svc.name}</strong><span>${cap(fmtLong.format(day.date))} à ${slotTime(state.time)}</span>` +
-      `<span>${dur(svc.min)} · ${euro(svc.price)}</span><small>${CFG.address} · tarif indicatif, à confirmer avec Oxypur</small>`;
+      `<small>${CFG.address} · tarifs et durées sur appel</small>`;
   }
 
   // la bande « Votre sélection »
@@ -366,8 +362,6 @@ window.__site = 1;
       write('day', `<span class="l">${l}</span><span class="s">${short(day.date)}</span>`, l, false);
     } else write('day', '—', '—', true);
     write('time', state.time != null ? slotTime(state.time) : '—', String(state.time), state.time == null);
-    write('dur', svc ? dur(svc.min) : '—', svc ? String(svc.min) : '', !svc);
-    write('price', svc ? euro(svc.price) : '—', svc ? String(svc.price) : '', !svc);
   }
 
   function show(panel, back) {
@@ -456,7 +450,6 @@ window.__site = 1;
     if (e.target.closest('[data-next]')) next();
     else if (e.target.closest('[data-prev]')) go(Math.max(1, state.step - 1));
     else if (e.target.closest('[data-restart]')) restart();
-    else if (e.target.closest('[data-ics]')) downloadIcs();
   });
   $$('[data-goto]', form).forEach((b) => b.addEventListener('click', () => {
     const n = +b.dataset.goto;
@@ -489,7 +482,7 @@ window.__site = 1;
       }
     } else if (pre) {
       pre.hidden = false;
-      pre.textContent = `Plus de ${DAYS[dow]} libre dans les quatorze prochains jours. Choisissez un autre jour, ou appelez le ${CFG.phone.replace(/ /g, NB)}.`;
+      pre.textContent = `Aucun ${DAYS[dow]} disponible dans la simulation sur les quatorze prochains jours. Choisissez un autre jour, ou appelez le ${CFG.phone.replace(/ /g, NB)}.`;
     }
     if (d && state.service) { state.max = Math.max(state.max, 3); go(3, { keepPre: true }); } else go(1);
     if (pre && !pre.hidden && live) live.textContent = pre.textContent;
@@ -523,7 +516,7 @@ window.__site = 1;
     state.name = name.value.trim();
     $('.done__k', form).textContent = `C’est noté, ${state.name}`;
     $('[data-done-title]', form).textContent = `${cap(fmtLong.format(day.date))}, ${slotTime(state.time)}.`;
-    $('[data-done-when]', form).textContent = `${svc.name}, ${dur(svc.min)}, ${euro(svc.price)} (indicatif). ${CFG.address}.`;
+    $('[data-done-when]', form).textContent = `${svc.name}. ${CFG.address}.`;
     go(5);
   });
 
@@ -534,58 +527,6 @@ window.__site = 1;
     $$('.err', form).forEach((x) => { x.hidden = true; });
     if (pre) pre.hidden = true;
     go(1, { silent: !!silent });
-  }
-
-  /* .ics en UTC, lignes CRLF pliées à 75 octets */
-  function parisOffset(ms) {
-    const p = paris(new Date(ms));
-    return Math.round((Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi) - ms) / 60000);
-  }
-  function toUTC(day, m) {
-    const d = day.date;
-    const wall = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), Math.floor(m / 60), m % 60);
-    const guess = wall - parisOffset(wall) * 60000;
-    return wall - parisOffset(guess) * 60000;
-  }
-  const stamp = (ms) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  const esc = (s) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
-  function fold(line) {
-    const enc = new TextEncoder();
-    if (enc.encode(line).length <= 75) return line;
-    const out = [];
-    let cur = '';
-    let n = 0;
-    for (const ch of line) {
-      const b = enc.encode(ch).length;
-      if (n + b > (out.length ? 74 : 75)) { out.push(cur); cur = ''; n = 0; }
-      cur += ch; n += b;
-    }
-    out.push(cur);
-    return out.join('\r\n ');
-  }
-  function downloadIcs() {
-    const svc = svcById(state.service);
-    const day = dayByIso(state.day);
-    if (!svc || !day || state.time == null) return;
-    const start = toUTC(day, state.time);
-    const lines = [
-      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Studio Lamy//Apercu ' + CFG.shop + '//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-      'BEGIN:VEVENT',
-      `UID:${stamp(start)}-${svc.id}@${CFG.uid}`,
-      `DTSTAMP:${stamp(Date.now())}`,
-      `DTSTART:${stamp(start)}`,
-      `DTEND:${stamp(start + svc.min * 60000)}`,
-      `SUMMARY:${esc(svc.name + ' · ' + CFG.shop)}`,
-      `LOCATION:${esc(CFG.address)}`,
-      `DESCRIPTION:${esc('Simulation depuis un aperçu non officiel : ce rendez-vous n’a pas été transmis au salon. Tarif et durée indicatifs. Tél. ' + CFG.phone)}`,
-      'END:VEVENT', 'END:VCALENDAR'
-    ];
-    const blob = new Blob([lines.map(fold).join('\r\n') + '\r\n'], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = doc.createElement('a');
-    a.href = url; a.download = CFG.ics;
-    doc.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
   go(1, { silent: true });

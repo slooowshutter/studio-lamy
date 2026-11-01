@@ -8,11 +8,11 @@
   const NB = '\u00a0';
   const EASE = 'cubic-bezier(0.23, 1, 0.32, 1)';
   const SERVICES = [
-    { id: 'sec', name: 'Coupe sur cheveux secs', duration: 45, price: null, note: 'Modalités à confirmer · durée d’exemple' },
-    { id: 'brushing', name: 'Shampoing, coupe & brushing', duration: 45, price: 30, note: 'Durée d’exemple' },
-    { id: 'etudiante', name: 'Forfait étudiante', duration: 45, price: 27, note: 'Conditions à confirmer · durée d’exemple' },
-    { id: 'homme', name: 'Coupe homme', duration: 30, price: 23, note: 'Durée d’exemple' },
-    { id: 'couleur', name: 'Coupe & couleur', duration: 90, price: 54, note: 'Durée d’exemple' }
+    { id: 'sec', name: 'Coupe sur cheveux secs' },
+    { id: 'brushing', name: 'Shampoing, coupe et brushing' },
+    { id: 'etudiante', name: 'Shampoing' },
+    { id: 'homme', name: 'Coupe homme' },
+    { id: 'couleur', name: 'Coupe et coloration' }
   ];
   // PagesJaunes et iCoiffeur, vus le 01/11/2026. Minutes depuis minuit.
   const HOURS = { 0: null, 1: [840, 1140], 2: [600, 1140], 3: [600, 1140], 4: [600, 1140], 5: [600, 1140], 6: [600, 1080] };
@@ -43,8 +43,7 @@
   function dateKey(date) { return date.toISOString().slice(0, 10); }
   function addDays(key, count) { const date = asDate(key); date.setUTCDate(date.getUTCDate() + count); return date; }
   function timeLabel(minutes) { const h = Math.floor(minutes / 60); const m = minutes % 60; return `${h}${NB}h${m ? `${NB}${String(m).padStart(2, '0')}` : ''}`; }
-  function durationLabel(minutes) { return minutes < 60 ? `${minutes}${NB}min` : timeLabel(minutes); }
-  function priceLabel(service) { return service && service.price !== null ? `${service.price}${NB}€` : 'À confirmer'; }
+  function priceLabel() { return 'À confirmer'; }
   function longDate(key) { return fullDateFormat.format(asDate(key)); }
 
   function easter(year) {
@@ -67,7 +66,7 @@
     if (!hours) return [];
     const now = parisNow();
     const slots = [];
-    for (let minutes = hours[0], index = 0; minutes + service.duration <= hours[1]; minutes += 30, index++) {
+    for (let minutes = hours[0], index = 0; minutes < hours[1]; minutes += 30, index++) {
       const past = key < now.key || (key === now.key && minutes <= now.minutes);
       const taken = (hashKey(key) + index * 13) % 7 === 0;
       slots.push({ minutes, available: !past && !taken, reason: past ? 'Passé' : taken ? 'Déjà pris' : '' });
@@ -115,7 +114,7 @@
       else button.removeAttribute('aria-current');
     });
     if (state.service && state.date && state.time !== null) {
-      $('#confirmation-recap').textContent = `${state.service.name} — ${longDate(state.date)} à ${timeLabel(state.time)}. Durée d’exemple${NB}: ${durationLabel(state.service.duration)}. Prix indicatif${NB}: ${priceLabel(state.service)}. Aucun envoi au salon.`;
+      $('#confirmation-recap').textContent = `${state.service.name} — ${longDate(state.date)} à ${timeLabel(state.time)}. Aucun envoi au salon.`;
     }
   }
   function renderServices() {
@@ -125,11 +124,11 @@
       const label = node('label', 'radio-option');
       const input = radio('service', service.id, state.service?.id === service.id);
       const description = node('span', '', service.name);
-      description.append(node('small', '', `${durationLabel(service.duration)} · ${service.note}`));
+      description.append(node('small', '', 'Tarif à confirmer auprès du salon')); 
       label.append(input, description, node('span', 'option-price', priceLabel(service)));
       input.addEventListener('change', () => {
         if (state.service?.id !== service.id) { state.service = service; state.date = null; state.time = null; }
-        error(0, false); updateSummary(); notify(`${service.name}, ${priceLabel(service)}. Durée d’exemple${NB}: ${durationLabel(service.duration)}.`);
+        error(0, false); updateSummary(); notify(`${service.name} sélectionnée.`);
       });
       container.append(label);
     });
@@ -246,7 +245,7 @@
       notify('Vérifiez les coordonnées indiquées.');
       return;
     }
-    $('#success-recap').textContent = `${nameInput.value.trim()}, votre exemple${NB}: ${state.service.name.toLowerCase()}, ${longDate(state.date)} à ${timeLabel(state.time)}. Prix indicatif${NB}: ${priceLabel(state.service)}. Durée d’exemple${NB}: ${durationLabel(state.service.duration)}.`;
+    $('#success-recap').textContent = `${nameInput.value.trim()}, votre simulation${NB}: ${state.service.name.toLowerCase()}, ${longDate(state.date)} à ${timeLabel(state.time)}.`;
     state.done = true;
     // Discard personal details once the simulated recap has been prepared.
     phoneInput.value = ''; nameInput.value = '';

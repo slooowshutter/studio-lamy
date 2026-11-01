@@ -322,7 +322,7 @@ window.__site = 1;
     if (!svc || !day) { wrap.innerHTML = ''; return; }
     const slots = slotsFor(day, svc.min);
     const free = slots.filter((s) => s.free).length;
-    note.textContent = `${cap(fmtLong.format(day.date))}${NB}: ${plural(free, 'heure possible', 'heures possibles')} pour ${svc.short.toLowerCase()} (${dur(svc.min)}).` +
+    note.textContent = `Simulation, disponibilités fictives. ${cap(fmtLong.format(day.date))}${NB}: ${plural(free, 'heure possible', 'heures possibles')} pour ${svc.short.toLowerCase()} (${dur(svc.min)}).` +
       (day.dow === CFG.satFlag ? ` Le samedi matin reste à confirmer.` : '') +
       (day.hol ? ` Jour férié${NB}: horaires à confirmer avec le salon.` : '');
     if (!free) {
@@ -558,7 +558,7 @@ window.__site = 1;
       `DTSTAMP:${stamp(Date.now())}`,
       `DTSTART:${stamp(start)}`,
       `DTEND:${stamp(start + svc.min * 60000)}`,
-      `SUMMARY:${esc(svc.name + ' · ' + CFG.shop)}`,
+      `SUMMARY:${esc('Essai · ' + svc.name + ' · ' + CFG.shop)}`,
       `LOCATION:${esc(CFG.address)}`,
       `DESCRIPTION:${esc(`Essai sur un aperçu non officiel${NB}: le salon n’a rien reçu. Pour réserver${NB}: Planity ou ` + CFG.phone)}`,
       'END:VEVENT', 'END:VCALENDAR'

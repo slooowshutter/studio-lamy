@@ -62,10 +62,9 @@
     6: [9 * 60, 19 * 60]
   };
   const services = {
-    coupe: { name: 'Coupe masculine', duration: 30 },
-    soin: { name: 'Soin capillaire', duration: 30 }
+    coupe: { name: 'Coupe masculine' },
+    soin: { name: 'Soin capillaire' }
   };
-  const frenchNumberSpace = '\u00a0';
   const state = {
     step: 1,
     maxStep: 1,
@@ -141,10 +140,9 @@
     const now = new Date();
     const isToday = dateKey(now) === state.day;
     const currentMinute = now.getHours() * 60 + now.getMinutes();
-    const duration = currentService().duration;
     const slots = [];
 
-    for (let minute = openAt; minute + duration <= closeAt; minute += 30) {
+    for (let minute = openAt; minute < closeAt; minute += 30) {
       const past = isToday && minute < currentMinute;
       const taken = !past && takenSlot(state.day, minute);
       slots.push({ minute, past, taken });
@@ -179,7 +177,7 @@
   function updateSummary() {
     const service = currentService();
     $('[data-summary="service"]').textContent = state.service ? service.name : 'À choisir';
-    $('[data-summary="duration"]').textContent = state.service ? `${service.duration}${frenchNumberSpace}min · exemple` : 'Exemple à confirmer';
+    $('[data-summary="duration"]').textContent = 'À demander au salon';
     $('[data-summary="day"]').textContent = state.day ? capitalize(formatDay(state.day)) : 'À choisir';
     $('[data-summary="time"]').textContent = state.time !== null ? formatTime(state.time) : 'À choisir';
     $('[data-summary="price"]').textContent = 'À confirmer';
@@ -187,7 +185,7 @@
       const target = Number(button.dataset.edit);
       button.disabled = state.step === 5 || state.step === target || state.maxStep < target;
     });
-    const recap = `<p><strong>${service.name}</strong> · ${service.duration}${frenchNumberSpace}min, durée d’exemple.</p>` +
+    const recap = `<p><strong>${service.name}</strong></p>` +
       `<p>${state.day ? capitalize(formatDay(state.day)) : 'Jour à choisir'}${state.time !== null ? ` · ${formatTime(state.time)}` : ''}</p>` +
       '<p>Tarif à confirmer.</p>';
     const contactRecap = $('[data-contact-recap]');
@@ -290,7 +288,6 @@
     if (!state.day || state.time === null) return;
     const date = parseDate(state.day);
     date.setHours(Math.floor(state.time / 60), state.time % 60, 0, 0);
-    const end = new Date(date.getTime() + currentService().duration * 60 * 1000);
     const now = new Date();
     const lines = [
       'BEGIN:VCALENDAR',
@@ -302,7 +299,6 @@
       `UID:${calendarStamp(date)}-simulation@marichal-francis.example`,
       `DTSTAMP:${calendarStamp(now)}`,
       `DTSTART:${calendarStamp(date)}`,
-      `DTEND:${calendarStamp(end)}`,
       `SUMMARY:${escapeCalendar(`Simulation · ${currentService().name} · Marichal Francis Coiffure`)}`,
       `LOCATION:${escapeCalendar('722 avenue de la République, 59800 Lille')}`,
       `DESCRIPTION:${escapeCalendar('Entrée de simulation issue d’un aperçu non officiel. Aucun rendez-vous n’a été transmis au salon. Vérifiez horaires et tarif directement auprès du salon.')}`,
@@ -357,7 +353,7 @@
       state.time = null;
       showStepError('time', false);
       updateSummary();
-      announce(`${currentService().name} choisi. Durée d’exemple : ${currentService().duration}${frenchNumberSpace}min. Tarif à confirmer.`);
+      announce(`${currentService().name} choisi. Tarif à confirmer auprès du salon.`);
     }
     if (target.name === 'slot') {
       state.time = Number(target.value);

@@ -111,7 +111,7 @@ window.__site = 1;
         }
       }
     }
-    $('[data-status-text]', el).textContent = txt + '.';
+    $('[data-status-text]', el).textContent = 'Selon Planity : ' + txt + ' (à confirmer).';
     el.classList.toggle('is-open', open);
   })();
 
@@ -273,9 +273,9 @@ window.__site = 1;
       const free = list.filter((s) => s.free).length;
       const over = open && list.length > 0 && list.every((s) => s.past);
       const dis = !open || free === 0;
-      const why = !open ? 'fermé' : over ? 'terminé' : 'complet';
+      const why = !open ? 'fermé' : over ? 'terminé' : 'indisponible dans la simulation';
       const tag = dis ? why : d.i === 0 ? 'auj.' : d.i === 1 ? 'demain' : fmtMon.format(d.date);
-      const aria = cap(fmtLong.format(d.date)) + (dis ? `, ${why}` : `, ${free} créneau${free > 1 ? 'x' : ''} libre${free > 1 ? 's' : ''}`);
+      const aria = cap(fmtLong.format(d.date)) + (dis ? `, ${why}` : `, ${free} créneau${free > 1 ? 'x' : ''} fictif${free > 1 ? 's' : ''}`);
       return `<label class="day"><input type="radio" name="day" value="${d.iso}" aria-label="${aria}"${dis ? ' disabled' : ''}${state.day === d.iso && !dis ? ' checked' : ''}><span aria-hidden="true"><span class="day__w">${fmtW.format(d.date)}</span><span class="day__d">${d.date.getUTCDate()}</span><span class="day__m">${tag}</span></span></label>`;
     }).join('');
     if (state.day && !$(`input[value="${state.day}"]:not(:disabled)`, wrap)) { state.day = null; state.time = null; }
@@ -289,9 +289,9 @@ window.__site = 1;
     if (!svc || !day) { wrap.innerHTML = ''; return; }
     const slots = slotsFor(day, svc.min);
     const free = slots.filter((s) => s.free).length;
-    note.textContent = `${cap(fmtLong.format(day.date))} · ${free} créneau${free > 1 ? 'x' : ''} libre${free > 1 ? 's' : ''} pour ${dur(svc.min)}.`;
+    note.textContent = `${cap(fmtLong.format(day.date))} · ${free} créneau${free > 1 ? 'x' : ''} fictif${free > 1 ? 's' : ''} pour ${dur(svc.min)}.`;
     if (!free) {
-      wrap.innerHTML = `<p class="slots__empty">Plus aucun créneau ce jour-là. Choisissez un autre jour, ou appelez le ${CFG.phone.replace(/ /g, NB)}.</p>`;
+      wrap.innerHTML = `<p class="slots__empty">Aucun créneau fictif disponible ce jour-là. Choisissez un autre jour, ou appelez le ${CFG.phone.replace(/ /g, NB)}.</p>`;
       return;
     }
     const groups = [['Matin', 0, 720], ['Après-midi', 720, 1020], ['Fin de journée', 1020, 1440]];
@@ -300,7 +300,7 @@ window.__site = 1;
       if (!list.length) return '';
       return `<div class="slots__g" role="group" aria-labelledby="sg-${gi}"><h4 id="sg-${gi}">${label}</h4><div class="slots__grid">${
         list.map((s) => {
-          const why = s.past ? ', passé' : s.taken ? ', déjà pris' : '';
+          const why = s.past ? ', passé' : s.taken ? ', indisponible dans la simulation' : '';
           return `<label class="slot"><input type="radio" name="time" value="${s.m}" aria-label="${hhmm(s.m)}${why}"${s.free ? '' : ' disabled'}${state.time === s.m && s.free ? ' checked' : ''}><span aria-hidden="true"><time datetime="${day.iso}T${hhmm(s.m)}">${hhmm(s.m)}</time></span></label>`;
         }).join('')
       }</div></div>`;
@@ -371,7 +371,7 @@ window.__site = 1;
     panels.forEach((p) => p.removeAttribute('aria-describedby'));
     updateSummary();
     if (!current || opts.silent) return;
-    if (live) live.textContent = step === 5 ? 'Réservation simulée enregistrée.' : `Étape ${step} sur 4 : ${LABELS[step]}.`;
+    if (live) live.textContent = step === 5 ? 'Simulation terminée, aucun rendez-vous transmis.' : `Étape ${step} sur 4 : ${LABELS[step]}.`;
     const h = $('.panel__t', current);
     if (h) h.focus({ preventScroll: true });
     if (!opts.noScroll) {

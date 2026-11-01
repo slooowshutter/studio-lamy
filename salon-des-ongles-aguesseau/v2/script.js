@@ -2,9 +2,9 @@ window.siteReady = true;
 (() => {
 'use strict';
 const services = {
-  pose: {name:'Pose complète', duration:90, time:'1 h 30'},
-  remplissage: {name:'Remplissage', duration:60, time:'1 h'},
-  beaute: {name:'Beauté des mains et des pieds', duration:45, time:'45 min'}
+  pose: {name:'Pose complète'},
+  remplissage: {name:'Remplissage'},
+  beaute: {name:'Beauté des mains et des pieds'}
 };
 const state = {step:0, service:null, date:null, time:null, first:'', phone:''};
 const panel = document.querySelector('#booking-panel');
@@ -25,14 +25,14 @@ function render(focus=true){
  count.textContent=state.step===4?'FIN / 04':`${String(state.step+1).padStart(2,'0')} / 04`;
  let html='';
  if(state.step===0){
-  html=`<h3 tabindex="-1">Choisir une prestation</h3><p>Durées d’exemple et tarifs à confirmer avec le salon.</p><div class="options">${Object.entries(services).map(([id,s])=>`<label class="option"><input type="radio" name="service" value="${id}" ${state.service===id?'checked':''}><span>${s.name}</span><span>${s.time} · à confirmer</span></label>`).join('')}</div><div class="booking-actions"><button type="button" data-next ${state.service?'':'disabled'}>Choisir le jour →</button></div>`;
+  html=`<h3 tabindex="-1">Choisir une prestation</h3><p>Durées et tarifs à confirmer avec le salon.</p><div class="options">${Object.entries(services).map(([id,s])=>`<label class="option"><input type="radio" name="service" value="${id}" ${state.service===id?'checked':''}><span>${s.name}</span><span>Durée à confirmer</span></label>`).join('')}</div><div class="booking-actions"><button type="button" data-next ${state.service?'':'disabled'}>Choisir le jour →</button></div>`;
  } else if(state.step===1){
   const now=new Date(); now.setHours(0,0,0,0);
-  let days=''; for(let i=0;i<14;i++){const d=new Date(now);d.setDate(d.getDate()+i);const key=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;const closed=d.getDay()===0;days+=`<button type="button" data-date="${key}" class="${state.date&&d.toDateString()===state.date.toDateString()?'selected':''}" aria-pressed="${Boolean(state.date&&d.toDateString()===state.date.toDateString())}" ${closed?'disabled':''}>${fmtShort.format(d)}<small>${closed?'fermé*':'exemple'}</small></button>`;}
-  html=`<h3 tabindex="-1">Choisir un jour</h3><p>Horaires de simulation&nbsp;: lundi–samedi, 9&nbsp;h–19&nbsp;h. *Dimanche fermé par hypothèse, à confirmer.</p><div class="days">${days}</div><div class="booking-actions"><button type="button" class="back" data-back>← Prestation</button><button type="button" data-next ${state.date?'':'disabled'}>Choisir l’heure →</button></div>`;
+  let days=''; for(let i=0;i<14;i++){const d=new Date(now);d.setDate(d.getDate()+i);const key=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;const closed=d.getDay()===0;days+=`<button type="button" data-date="${key}" class="${state.date&&d.toDateString()===state.date.toDateString()?'selected':''}" aria-pressed="${Boolean(state.date&&d.toDateString()===state.date.toDateString())}" ${closed?'disabled':''}>${fmtShort.format(d)}<small>${closed?'non proposé':'exemple'}</small></button>`;}
+  html=`<h3 tabindex="-1">Choisir un jour</h3><p>Horaires de simulation&nbsp;: lundi–samedi, 9&nbsp;h–19&nbsp;h. Dimanche non proposé dans la simulation ; ouverture à confirmer.</p><div class="days">${days}</div><div class="booking-actions"><button type="button" class="back" data-back>← Prestation</button><button type="button" data-next ${state.date?'':'disabled'}>Choisir l’heure →</button></div>`;
  } else if(state.step===2){
-  let slots='';const now=new Date();const same=state.date.toDateString()===now.toDateString();const duration=services[state.service].duration;
-  for(let mins=540, i=0;mins+duration<=1140;mins+=30,i++){const past=same && mins<=now.getHours()*60+now.getMinutes();const taken=(i+state.date.getDate())%5===0;const disabled=past||taken;slots+=`<button type="button" data-time="${mins}" class="${state.time===mins?'selected':''}" aria-pressed="${state.time===mins}" ${disabled?'disabled':''} aria-label="${timeLabel(mins)}${disabled?(past?', passé':', déjà pris en simulation'):''}">${timeLabel(mins)}${disabled?'<small> · indisponible</small>':''}</button>`;}
+  let slots='';const now=new Date();const same=state.date.toDateString()===now.toDateString();
+  for(let mins=540, i=0;mins<1140;mins+=30,i++){const past=same && mins<=now.getHours()*60+now.getMinutes();const taken=(i+state.date.getDate())%5===0;const disabled=past||taken;slots+=`<button type="button" data-time="${mins}" class="${state.time===mins?'selected':''}" aria-pressed="${state.time===mins}" ${disabled?'disabled':''} aria-label="${timeLabel(mins)}${disabled?(past?', passé':', déjà pris en simulation'):''}">${timeLabel(mins)}${disabled?'<small> · indisponible</small>':''}</button>`;}
   html=`<h3 tabindex="-1">Choisir une heure</h3><p>Créneaux fictifs pour le ${fmtDate.format(state.date)}. Les disponibilités réelles sont à confirmer.</p><div class="slots">${slots}</div><div class="booking-actions"><button type="button" class="back" data-back>← Jour</button><button type="button" data-next ${state.time!==null?'':'disabled'}>Vos coordonnées →</button></div>`;
  } else if(state.step===3){
   html=`<h3 tabindex="-1">Vos coordonnées</h3><p>Ces informations restent sur cet appareil. Rien ne sera envoyé.</p><form id="contact-form" novalidate><div class="field"><label for="first">Prénom</label><input id="first" name="first" autocomplete="given-name" value="${escapeHTML(state.first)}" aria-describedby="first-error"><span id="first-error" class="error"></span></div><div class="field"><label for="phone">Téléphone mobile</label><input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${escapeHTML(state.phone)}" aria-describedby="phone-error"><span id="phone-error" class="error"></span></div><p>${services[state.service].name} · ${fmtDate.format(state.date)} à ${timeLabel(state.time)} · tarif à confirmer</p><div class="booking-actions"><button type="button" class="back" data-back>← Heure</button><button type="submit">Terminer la simulation →</button></div></form>`;
@@ -58,14 +58,5 @@ summary.addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(
 document.querySelectorAll('[data-select]').forEach(b=>b.addEventListener('click',()=>{state.service=b.dataset.select;state.date=null;state.time=null;setStep(0);document.querySelector('#reservation').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}));
 document.querySelectorAll('.filter').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.filter').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});document.querySelectorAll('.price-row').forEach(row=>row.hidden=button.dataset.filter!=='all'&&row.dataset.category!==button.dataset.filter);}));
 render(false);
-const rating=document.querySelector('.rating-number');
-const ratingValue=rating.querySelector('[data-rating]');
-function countRating(){
- if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
- const start=performance.now();
- function frame(now){const progress=Math.min((now-start)/650,1);ratingValue.textContent=(4.9*(1-Math.pow(1-progress,3))).toFixed(1).replace('.',',');if(progress<1)requestAnimationFrame(frame);}
- requestAnimationFrame(frame);
-}
-if('IntersectionObserver' in window){const ratingObserver=new IntersectionObserver(entries=>{if(entries[0].isIntersecting){countRating();ratingObserver.disconnect();}},{threshold:.4});ratingObserver.observe(rating);}
 if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target);}}),{threshold:.12});document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=`${i*60}ms`;observer.observe(el);});}else document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));
 })();

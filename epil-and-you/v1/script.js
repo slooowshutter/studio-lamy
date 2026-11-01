@@ -7,10 +7,10 @@
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   const NB = '\u00a0';
   const services = {
-    epilation: { name: 'Épilation corporelle', duration: 30, price: 25 },
-    visage: { name: 'Soin du visage', duration: 60, price: 55 },
-    manucure: { name: 'Manucure', duration: 30, price: 25 },
-    pieds: { name: 'Soin des pieds', duration: 45, price: 40 }
+    epilation: { name: 'Épilation corporelle' },
+    visage: { name: 'Soin du visage' },
+    manucure: { name: 'Manucure' },
+    pieds: { name: 'Soin des pieds' }
   };
   // Pages Jaunes, relevé le 01/11/2026. Grille à confirmer, utilisée uniquement pour l’exemple.
   const hours = { 0: null, 1: [600, 1170], 2: [600, 1170], 3: [600, 1170], 4: [600, 1170], 5: [600, 1170], 6: [540, 1140] };
@@ -29,7 +29,6 @@
   }
   const asDate = iso => new Date(`${iso}T12:00:00Z`);
   const timeText = minutes => `${Math.floor(minutes / 60)}${NB}h${minutes % 60 ? NB + String(minutes % 60).padStart(2, '0') : ''}`;
-  const priceText = service => `${service.price}${NB}€`;
   const announce = text => { $('#booking-status').textContent = text; };
 
   function holiday(date) {
@@ -53,7 +52,7 @@
     if (!range || !service) return [];
     const seed = [...iso + serviceKey].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
     const result = [];
-    for (let minutes = range[0]; minutes + service.duration <= range[1]; minutes += 30) {
+    for (let minutes = range[0]; minutes < range[1]; minutes += 30) {
       const past = iso < now.iso || (iso === now.iso && minutes <= now.minutes);
       const taken = (seed + Math.floor(minutes / 30)) % 5 === 0;
       result.push({ minutes, disabled: past || taken, reason: past ? 'passé' : taken ? 'déjà pris (exemple)' : '' });
@@ -107,18 +106,18 @@
 
   function summary() {
     const service = services[state.service];
-    $('#summary-service').textContent = service ? `${service.name} · ${service.duration}${NB}min` : 'À choisir';
+    $('#summary-service').textContent = service ? service.name : 'À choisir';
     $('#summary-day').textContent = state.day ? longFormat.format(asDate(state.day)) : 'À choisir';
     $('#summary-time').textContent = state.minutes === null ? 'À choisir' : timeText(state.minutes);
-    $('#summary-price').textContent = service ? `${priceText(service)} · exemple` : '—';
+    $('#summary-price').textContent = service ? 'À confirmer' : '—';
     $('#compact-summary').textContent = service
-      ? `Exemple · ${service.name} · ${service.duration}${NB}min · ${priceText(service)}${state.day ? ' · ' + longFormat.format(asDate(state.day)) : ' · jour à choisir'}${state.minutes !== null ? ' à ' + timeText(state.minutes) : ''}`
+      ? `Exemple · ${service.name}${state.day ? ' · ' + longFormat.format(asDate(state.day)) : ' · jour à choisir'}${state.minutes !== null ? ' à ' + timeText(state.minutes) : ''}`
       : 'Exemple · choisissez une prestation.';
     $('[data-next="1"]').disabled = !state.service;
     $('[data-next="2"]').disabled = !state.day;
     $('[data-next="3"]').disabled = state.minutes === null;
     if (service && state.day && state.minutes !== null) {
-      $('#final-recap').textContent = `${service.name} · ${service.duration}${NB}min · ${longFormat.format(asDate(state.day))} à ${timeText(state.minutes)}. ${priceText(service)} (exemple, à confirmer).`;
+      $('#final-recap').textContent = `${service.name} · ${longFormat.format(asDate(state.day))} à ${timeText(state.minutes)}. Tarif à confirmer.`;
     }
     $$('[data-step]').forEach(button => {
       const step = +button.dataset.step;
@@ -157,7 +156,7 @@
     state.service = value; state.day = null; state.minutes = null; state.maxStep = 0;
     $$('input[name="service"]').forEach(input => { input.checked = input.value === value; });
     renderDays(); summary();
-    announce(`${services[value].name}, ${services[value].duration} minutes, ${services[value].price} euros. Exemple, à confirmer.`);
+    announce(`${services[value].name} sélectionné dans la simulation. Tarif à confirmer.`);
   }
   $('fieldset.service-options').addEventListener('change', event => chooseService(event.target.value));
   $('#days').addEventListener('change', event => {

@@ -104,9 +104,9 @@
   if (!panel) return;
 
   const services = [
-    { id: 'coupe', name: 'Coupe homme', duration: 30, durationLabel: '30 min · exemple, à confirmer', priceLabel: 'À confirmer' },
-    { id: 'barbe', name: 'Taille de barbe', duration: 20, durationLabel: '20 min · exemple, à confirmer', priceLabel: 'À confirmer' },
-    { id: 'combo', name: 'Coupe homme + barbe', duration: 60, durationLabel: '1 h · source Konfian, à confirmer', priceLabel: 'À partir de 30 €*' }
+    { id: 'coupe', name: 'Coupe homme', durationLabel: 'Durée à confirmer', priceLabel: 'À confirmer' },
+    { id: 'barbe', name: 'Taille de barbe', durationLabel: 'Durée à confirmer', priceLabel: 'À confirmer' },
+    { id: 'combo', name: 'Coupe homme + barbe', durationLabel: 'Durée à confirmer', priceLabel: 'À confirmer' }
   ];
   const openingHours = {
     0: null,
@@ -195,8 +195,8 @@
       const caption = index === 0 ? 'Aujourd’hui' : shortWeekday(date);
       const full = longDate(iso);
       return `<label class="day-option" for="day-${iso}">
-        <input id="day-${iso}" type="radio" name="day" value="${iso}" aria-label="${full}${closed ? ', fermé' : ''}"${closed ? ' disabled' : ''}${state.day === iso && !closed ? ' checked' : ''}>
-        <span class="day-option__face"><strong>${caption}</strong><time datetime="${iso}">${date.getDate()}</time><small>${closed ? 'Fermé' : '\u00a0'}</small></span>
+        <input id="day-${iso}" type="radio" name="day" value="${iso}" aria-label="${full}${closed ? ', non proposé' : ''}"${closed ? ' disabled' : ''}${state.day === iso && !closed ? ' checked' : ''}>
+        <span class="day-option__face"><strong>${caption}</strong><time datetime="${iso}">${date.getDate()}</time><small>${closed ? 'Non proposé' : '\u00a0'}</small></span>
       </label>`;
     });
     return days.join('');
@@ -217,7 +217,7 @@
     if (!hours || !service) return [];
     const now = parisParts();
     const slots = [];
-    for (let minute = hours[0]; minute + service.duration <= hours[1]; minute += 30) {
+    for (let minute = hours[0]; minute < hours[1]; minute += 30) {
       const isPast = iso < now.iso || (iso === now.iso && minute <= now.minutes);
       const booked = hash(`${iso}-${minute}`) % 7 === 0;
       slots.push({ minute, isPast, booked, available: !isPast && !booked });
@@ -235,14 +235,14 @@
   const stepContent = () => {
     if (state.step === 0) {
       return `<h3 class="step-title" id="step-title" tabindex="-1">Choisissez une prestation</h3>
-        <p class="step-help">Durées et prix à vérifier avec le salon. Le troisième tarif vient d’un annuaire tiers.</p>
+        <p class="step-help">Durées et tarifs : appelez le salon au 06 09 98 95 68.</p>
         <fieldset class="service-options"><legend>Prestations recensées</legend>${serviceMarkup()}</fieldset>
         <div class="step-actions"><button class="button" type="button" data-next${state.service ? '' : ' disabled'}>Continuer <span aria-hidden="true">→</span></button></div>
         <p class="booking-status" aria-live="polite"></p>`;
     }
     if (state.step === 1) {
       return `<h3 class="step-title" id="step-title" tabindex="-1">Choisissez un jour</h3>
-        <p class="step-help">Base d’essai Planity&nbsp;: mardi–samedi, 10&nbsp;h–20&nbsp;h. Lundi et dimanche fermés. Horaires à confirmer.</p>
+        <p class="step-help">Base d’essai Planity&nbsp;: mardi–samedi, 10&nbsp;h–20&nbsp;h. Lundi et dimanche non proposés dans la simulation. Horaires à confirmer.</p>
         <fieldset class="service-options"><legend>Les 14 prochains jours</legend><div class="day-strip">${dayMarkup()}</div></fieldset>
         <div class="step-actions"><button class="button button--quiet" type="button" data-back>Retour</button><button class="button" type="button" data-next${state.day ? '' : ' disabled'}>Voir les heures <span aria-hidden="true">→</span></button></div>
         <p class="booking-status" aria-live="polite">Les jours fériés sont à confirmer.</p>`;
@@ -341,11 +341,10 @@
     const service = selectedService();
     if (!anchor || !service || !state.day || state.time === null) return;
     const start = parisWallToUtc(state.day, state.time);
-    const end = parisWallToUtc(state.day, state.time + service.duration);
     const lines = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Studio Lamy//Apercu Camara//FR', 'METHOD:PUBLISH',
       'BEGIN:VEVENT', `UID:${Date.now()}@preview-camaras.studio-lamy`, `DTSTAMP:${icsDate(new Date())}`,
-      `DTSTART:${icsDate(start)}`, `DTEND:${icsDate(end)}`,
+      `DTSTART:${icsDate(start)}`,
       `SUMMARY:${escapeIcs(`${service.name} — Camara's barbershop`)}`,
       'LOCATION:96 Av. Yves Brunaud\, 31500 Toulouse',
       'DESCRIPTION:Essai privé. Rien n’a été transmis au salon.',

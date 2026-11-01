@@ -2,43 +2,24 @@
 'use strict';
 document.documentElement.classList.add('js');
 const services = [
- {id:'balneo',name:'Soin des pieds en balnéo',duration:60,price:45},
- {id:'mains',name:'Semi-permanent mains',duration:60,price:35},
- {id:'pieds',name:'Semi-permanent pieds',duration:45,price:35},
- {id:'gainage',name:'Gainage des ongles naturels',duration:60,price:40},
- {id:'extensions',name:'Extensions d’ongles',duration:90,price:60}
+ {id:'balneo',name:'Soin des pieds en balnéo'},
+ {id:'mains',name:'Semi-permanent mains'},
+ {id:'pieds',name:'Semi-permanent pieds'},
+ {id:'gainage',name:'Gainage des ongles naturels'},
+ {id:'extensions',name:'Extensions d’ongles'}
 ];
-const state={step:0,service:null,date:null,time:null,name:'',phone:'',done:false,maxStep:0};
 const content=document.querySelector('#booking-content');
 const summary=document.querySelector('#booking-summary');
-const dateFormat=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-const shortDate=new Intl.DateTimeFormat('fr-FR',{weekday:'short',day:'numeric',month:'short'});
-const dayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const fromKey=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
-const safe=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const service=()=>services.find(s=>s.id===state.service);
-const timeText=n=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
-function updateSummary(){const s=service();summary.innerHTML=s?`<p><strong>${safe(s.name)}</strong><br>${s.duration}&nbsp;min · ${s.price}&nbsp;€ <small>(exemple)</small></p>${state.date?`<p>${safe(dateFormat.format(fromKey(state.date)))}</p>`:''}${state.time!==null?`<p>${timeText(state.time)}</p>`:''}`:'<p>Votre choix apparaîtra ici.</p>';}
-function daysHTML(){let out='';const today=new Date();today.setHours(0,0,0,0);for(let i=0;i<14;i++){const d=new Date(today);d.setDate(today.getDate()+i);const closed=d.getDay()===0||d.getDay()===6;const key=dayKey(d);out+=`<button type="button" class="choice ${state.date===key?'selected':''}" data-day="${key}" aria-pressed="${state.date===key}" ${closed?'disabled':''}>${safe(shortDate.format(d))}${closed?'<small>Fermé</small>':''}</button>`;}return out;}
-function slotsHTML(){const d=fromKey(state.date),s=service(),now=new Date();let out='';for(let n=540;n+s.duration<=1080;n+=30){const t=new Date(d);t.setHours(Math.floor(n/60),n%60);const taken=(d.getDate()+d.getMonth()+n/30)%5===0;const past=t<=now;out+=`<button type="button" class="choice ${state.time===n?'selected':''}" data-time="${n}" aria-pressed="${state.time===n}" ${taken||past?'disabled':''}>${timeText(n)}${taken?'<small>Déjà pris</small>':past?'<small>Passé</small>':''}</button>`;}return out;}
-function render(focus=true){
- document.querySelectorAll('[data-goto]').forEach(b=>{let n=Number(b.dataset.goto);b.disabled=state.done||n>state.maxStep;b.classList.toggle('current',n===state.step);b.setAttribute('aria-current',n===state.step?'step':'false')});
- let html='';
- if(state.done){html=`<h3 tabindex="-1">Simulation terminée.</h3><p>Merci ${safe(state.name)}. Aucun rendez-vous n’a été envoyé ni réservé.</p><p>${safe(service().name)} · ${safe(dateFormat.format(fromKey(state.date)))} à ${timeText(state.time)} · ${service().price}&nbsp;€ (tarif indicatif, à confirmer).</p><button type="button" class="next" data-action="restart">Recommencer</button>`;}
- else if(state.step===0){html=`<h3 tabindex="-1">Choisir un soin.</h3><p>Prix et durées donnés à titre d’exemple.</p><div class="options">${services.map(s=>`<label class="option"><input type="radio" name="service" value="${s.id}" ${state.service===s.id?'checked':''}><span>${s.name}<br><small>${s.duration}&nbsp;min · exemple</small></span><strong>${s.price}&nbsp;€</strong></label>`).join('')}</div><button type="button" class="next" data-action="next" ${state.service?'':'disabled'}>Choisir un jour →</button>`;}
- else if(state.step===1){html=`<h3 tabindex="-1">Quel jour&nbsp;?</h3><p>Horaires indicatifs, à confirmer. Samedi et dimanche affichés fermés selon PagesJaunes.</p><div class="days">${daysHTML()}</div><button type="button" class="back" data-action="back">← Retour</button><button type="button" class="next" data-action="next" ${state.date?'':'disabled'}>Choisir une heure →</button>`;}
- else if(state.step===2){html=`<h3 tabindex="-1">À quelle heure&nbsp;?</h3><p>Créneaux fictifs pour le ${safe(dateFormat.format(fromKey(state.date)))}.</p><div class="slots">${slotsHTML()}</div><button type="button" class="back" data-action="back">← Retour</button><button type="button" class="next" data-action="next" ${state.time!==null?'':'disabled'}>Vos coordonnées →</button>`;}
- else {html=`<h3 tabindex="-1">Vos coordonnées.</h3><p>Ces informations restent sur cet appareil pour cette simulation.</p><form id="details" novalidate><div class="fields"><label for="first-name">Prénom<input id="first-name" name="name" autocomplete="given-name" value="${safe(state.name)}" required aria-describedby="name-error"></label><span class="error" id="name-error"></span><label for="phone">Téléphone<input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${safe(state.phone)}" required aria-describedby="phone-error"></label><span class="error" id="phone-error"></span></div><button type="button" class="back" data-action="back">← Retour</button><button type="submit" class="next">Confirmer la simulation →</button></form>`;}
- content.innerHTML=`<div class="step-panel">${html}</div>`;updateSummary();if(focus){content.querySelector('h3').focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches){const panel=content.firstElementChild;panel.classList.add('enter');requestAnimationFrame(()=>requestAnimationFrame(()=>panel.classList.remove('enter')));}}
+let selected=null;
+function render(){
+ content.innerHTML=`<div class="step-panel"><h3>Choisir une prestation.</h3><p>Pour connaître les horaires et les tarifs, appelez le salon au 06 63 67 07 29.</p><div class="options">${services.map(s=>`<label class="option"><input type="radio" name="service" value="${s.id}" ${selected===s.id?'checked':''}><span>${s.name}</span><strong>Sur appel</strong></label>`).join('')}</div><a class="next" href="tel:+33663670729">Appeler le salon →</a></div>`;
+ const item=services.find(s=>s.id===selected);
+ summary.textContent=item?item.name:'Votre choix apparaîtra ici.';
 }
-content.addEventListener('change',e=>{if(e.target.name==='service'){state.service=e.target.value;state.date=null;state.time=null;state.maxStep=0;render(false);content.querySelector(`input[value="${state.service}"]`).focus()}});
-content.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.day){state.date=b.dataset.day;state.time=null;state.maxStep=Math.min(state.maxStep,1);render(false);content.querySelector(`[data-day="${state.date}"]`).focus()}else if(b.dataset.time){state.time=Number(b.dataset.time);state.maxStep=Math.min(state.maxStep,2);render(false);content.querySelector(`[data-time="${state.time}"]`).focus()}else if(b.dataset.action==='next'){state.step++;state.maxStep=Math.max(state.maxStep,state.step);render()}else if(b.dataset.action==='back'){state.step--;render()}else if(b.dataset.action==='restart'){Object.assign(state,{step:0,service:null,date:null,time:null,name:'',phone:'',done:false,maxStep:0});render()}});
-content.addEventListener('submit',e=>{e.preventDefault();const form=e.target;state.name=form.elements.name.value.trim();state.phone=form.elements.phone.value.trim();const digits=state.phone.replace(/[\s.()-]/g,'');const validName=state.name.length>=2;const validPhone=/^(?:(?:\+33|0033)[1-9]\d{8}|0[1-9]\d{8})$/.test(digits);document.querySelector('#name-error').textContent=validName?'':'Indiquez votre prénom (2 caractères minimum).';document.querySelector('#phone-error').textContent=validPhone?'':'Indiquez un numéro français valide.';form.elements.name.setAttribute('aria-invalid',String(!validName));form.elements.phone.setAttribute('aria-invalid',String(!validPhone));if(!validName){form.elements.name.focus();return}if(!validPhone){form.elements.phone.focus();return}state.done=true;render()});
-document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>{state.step=Number(b.dataset.goto);render()}));
-document.querySelectorAll('[data-service]').forEach(a=>a.addEventListener('click',()=>{state.service=a.dataset.service;state.date=null;state.time=null;state.step=0;state.maxStep=0;state.done=false;render(false)}));
+content.addEventListener('change',e=>{if(e.target.name==='service'){selected=e.target.value;summary.textContent=services.find(s=>s.id===selected).name;}});
+document.querySelectorAll('[data-goto]').forEach((b,i)=>{b.disabled=i>0;if(i===0)b.setAttribute('aria-current','step');});
+document.querySelectorAll('[data-service]').forEach(a=>a.addEventListener('click',()=>{selected=a.dataset.service;render();}));
 document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.filter').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b))});document.querySelectorAll('.price-row').forEach(row=>row.hidden=b.dataset.filter!=='all'&&row.dataset.category!==b.dataset.filter)}));
-const rating=document.querySelector('.rating-number [data-count]');
-function countRating(){if(!rating||matchMedia('(prefers-reduced-motion: reduce)').matches)return;let start;const tick=t=>{if(!start)start=t;const progress=Math.min((t-start)/500,1);rating.textContent=(4+0.9*progress).toFixed(1).replace('.',',');if(progress<1)requestAnimationFrame(tick)};requestAnimationFrame(tick)}
-if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');if(e.target.classList.contains('rating'))countRating();observer.unobserve(e.target)}}),{threshold:.12});document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));}else document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));
+if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}}),{threshold:.12});document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));}else document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));
 render(false);
 })();

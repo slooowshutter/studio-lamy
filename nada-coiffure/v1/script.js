@@ -100,6 +100,8 @@ window.__site = 1;
     let open = false;
     if (h && now < h[1] && isHoliday(new Date(Date.UTC(t.y, t.m - 1, t.d, 12)))) {
       txt = `Jour férié${NB}: horaires à confirmer avec le salon`;
+    } else if (dow === 6 && now < h[0]) {
+      txt = `Samedi${NB}: heure d’ouverture à confirmer avec le salon`;
     } else if (h && now < h[0]) {
       txt = `Ouvre aujourd’hui à ${hfr(h[0])}, jusqu’à ${hfr(h[1])}`;
     } else if (h && now < h[1]) {
@@ -110,7 +112,7 @@ window.__site = 1;
         const d = (dow + k) % 7;
         if (CFG.hours[d]) {
           const when = k === 1 ? 'demain' : DAYS[d];
-          const hol = isHoliday(new Date(Date.UTC(t.y, t.m - 1, t.d + k, 12))) ? ` (férié, horaires à confirmer)` : '';
+          const hol = isHoliday(new Date(Date.UTC(t.y, t.m - 1, t.d + k, 12))) ? ` (férié, horaires à confirmer)` : d === 6 ? ' (horaire du samedi à confirmer)' : '';
           txt = (h ? 'Fermé pour aujourd’hui' : `Fermé le ${DAYS[dow]}`) + `. Réouverture ${when} à ${hfr(CFG.hours[d][0])}${hol}`;
           break;
         }
@@ -342,7 +344,7 @@ window.__site = 1;
     if (!svc || !day) { wrap.innerHTML = ''; return; }
     const slots = slotsFor(day, svc.min);
     const free = slots.filter((s) => s.free).length;
-    note.textContent = `${cap(fmtLong.format(day.date))} · ${plural(free, 'créneau libre', 'créneaux libres')} pour ${svc.name.toLowerCase()} (${dur(svc.min)}).` +
+    note.textContent = `Simulation, disponibilités fictives. ${cap(fmtLong.format(day.date))} · ${plural(free, 'créneau libre', 'créneaux libres')} pour ${svc.name.toLowerCase()} (${dur(svc.min)}).` +
       (day.hol ? ` Jour férié${NB}: horaires à confirmer avec le salon.` : '');
     if (!free) {
       wrap.innerHTML = `<p class="slots__empty">Plus de place sur la carte ce jour-là. Un autre jour, ou un appel au ${CFG.phone.replace(/ /g, NB)}.</p>`;
@@ -569,7 +571,7 @@ window.__site = 1;
       `DTSTAMP:${stamp(Date.now())}`,
       `DTSTART:${stamp(start)}`,
       `DTEND:${stamp(start + svc.min * 60000)}`,
-      `SUMMARY:${esc(svc.name + ' · ' + CFG.shop)}`,
+      `SUMMARY:${esc('Essai · ' + svc.name + ' · ' + CFG.shop)}`,
       `LOCATION:${esc(CFG.address)}`,
       `DESCRIPTION:${esc(`Carte d’essai, depuis un aperçu non officiel${NB}: ce rendez-vous n’a pas été transmis au salon. Tél. ` + CFG.phone)}`,
       'END:VEVENT', 'END:VCALENDAR'

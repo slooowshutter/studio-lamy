@@ -16,11 +16,11 @@
     }
   };
   const SERVICES = {
-    'coupe-femme': { name: 'Shampoing + coupe + brushing, cheveux courts', short: 'Coupe + brushing, cheveux courts', minutes: 30, price: 44 },
-    'coupe-homme': { name: 'Shampoing + coupe homme', short: 'Coupe homme', minutes: 30, price: 26 },
-    brushing: { name: 'Shampoing + brushing, cheveux courts', short: 'Brushing, cheveux courts', minutes: 30, price: 26 },
-    soin: { name: 'Soin profond', short: 'Soin profond', minutes: 30, price: 25 },
-    junior: { name: 'Coupe + shampoing + séchage junior (-12 ans)', short: 'Coupe junior', minutes: 30, price: 20 }
+    'coupe-femme': { name: 'Shampoing + coupe + brushing, cheveux courts', short: 'Coupe + brushing, cheveux courts' },
+    'coupe-homme': { name: 'Shampoing + coupe homme', short: 'Coupe homme' },
+    brushing: { name: 'Shampoing + brushing, cheveux courts', short: 'Brushing, cheveux courts' },
+    soin: { name: 'Soin profond', short: 'Soin profond' },
+    junior: { name: 'Coupe + shampoing + séchage junior (-12 ans)', short: 'Coupe junior' }
   };
   const NB = '\u00a0';
   const DAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -210,12 +210,11 @@
       return;
     }
 
-    const duration = serviceInfo().minutes;
     const now = parisNow();
     const isToday = dateKey(parisToday()) === state.date;
     const earliest = isToday ? now.minutes : hours[0];
     const slots = [];
-    for (let start = hours[0]; start + duration <= hours[1]; start += 30) {
+    for (let start = hours[0]; start < hours[1]; start += 30) {
       const past = isToday && start < earliest;
       const key = `${state.date}:${state.service}:${start}`;
       slots.push({ start, past, booked: !past && deterministicBooked(key) });
@@ -263,7 +262,7 @@
     const serviceText = $('[data-summary-service]');
     const dateText = $('[data-summary-date]');
     const contactText = $('[data-summary-contact]');
-    if (serviceText) serviceText.textContent = `${service.short} · ${service.price}${NB}€`;
+    if (serviceText) serviceText.textContent = service.short;
     if (dateText) {
       if (state.date && state.time) {
         const date = new Date(`${state.date}T12:00:00Z`);
@@ -325,7 +324,7 @@
     if (!node) return;
     const date = state.date ? new Date(`${state.date}T12:00:00Z`) : null;
     const [hours, minutes] = (state.time || '00:00').split(':').map(Number);
-    node.innerHTML = `<p><strong>${safeText(serviceInfo().short)}</strong><br>${date ? safeText(formatLongDate(date)) : ''} · ${safeText(formatTime(hours * 60 + minutes))} · ${serviceInfo().price}${NB}€ indicatifs</p>`;
+    node.innerHTML = `<p><strong>${safeText(serviceInfo().short)}</strong><br>${date ? safeText(formatLongDate(date)) : ''} · ${safeText(formatTime(hours * 60 + minutes))}</p>`;
   }
 
   function validMobile(value) {
@@ -374,7 +373,7 @@
     const node = $('[data-success-recap]');
     const date = new Date(`${state.date}T12:00:00Z`);
     const [hours, minutes] = state.time.split(':').map(Number);
-    node.innerHTML = `<p><strong>${safeText(serviceInfo().short)}</strong><br>${safeText(formatLongDate(date))} · ${safeText(formatTime(hours * 60 + minutes))}<br>${serviceInfo().price}${NB}€ indicatifs<br>${safeText(state.name)} · ${safeText(prettyPhone(state.phone))}</p>`;
+    node.innerHTML = `<p><strong>${safeText(serviceInfo().short)}</strong><br>${safeText(formatLongDate(date))} · ${safeText(formatTime(hours * 60 + minutes))}<br>${safeText(state.name)} · ${safeText(prettyPhone(state.phone))}</p>`;
   }
 
   function initStatus() {
@@ -384,6 +383,14 @@
     const status = $('[data-open-status]');
     if (!status) return;
     const range = SHOP.hours[now.weekday];
+    if (isFrenchPublicHoliday(parisToday())) {
+      status.textContent = 'Jour férié : horaires à confirmer auprès du salon.';
+      return;
+    }
+    if (now.weekday === 6) {
+      status.textContent = 'Samedi : horaires à confirmer auprès du salon.';
+      return;
+    }
     if (!range) {
       status.textContent = 'Fermé aujourd’hui selon les horaires publiés.';
     } else if (now.minutes >= range[0] && now.minutes < range[1]) {

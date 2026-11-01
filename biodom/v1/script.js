@@ -8,7 +8,7 @@ const BiodomBooking = (() => {
     bresilien: { name: 'Maillot brésilien + SIF', duration: 15, price: 25 },
     gel: { name: 'Renforcement en gel', duration: 60, price: 40 }
   };
-  const hours = { 1: [600,1260], 2: [600,1260], 3: [600,1260], 4: [600,1260], 5: [600,1320], 6: [600,1260] };
+  const hours = {};
   const paris = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   function parisNow(now = new Date()) {
     const parts = Object.fromEntries(paris.formatToParts(now).map(p => [p.type,p.value]));
@@ -39,14 +39,7 @@ const BiodomBooking = (() => {
     }
     return result;
   }
-  function days(duration, now = new Date()) {
-    const today=asDate(parisNow(now).key);
-    return Array.from({length:14},(_,index) => {
-      const date=new Date(today); date.setUTCDate(today.getUTCDate()+index);
-      const key=date.toISOString().slice(0,10), closed=!hours[date.getUTCDay()];
-      return { key, index, closed, holiday:holiday(key), available:!closed&&slots(key,duration,now).some(slot=>slot.available) };
-    });
-  }
+  function days() { return []; }
   const validPhone = raw => /^(?:0[67]\d{8}|(?:\+33|0033)[67]\d{8})$/.test(raw.replace(/[\s.()\-]/g,''));
   return {services,hours,parisNow,asDate,dateLabel,timeLabel,holiday,slots,days,validPhone};
 })();
@@ -69,8 +62,8 @@ if (typeof document !== 'undefined') (() => {
   function updateSummary() {
     $('#summary-service').textContent=selected().name;
     $('#summary-price').textContent=`${selected().duration===60?'1\u00a0h':`${selected().duration}\u00a0min`} · ${selected().price}\u00a0€`;
-    $('#summary-day').textContent=state.day?dateLabel(state.day):'À choisir';
-    $('#summary-time').textContent=state.time!==null?timeLabel(state.time):'À choisir';
+    $('#summary-day').textContent=state.day?dateLabel(state.day):'Par téléphone';
+    $('#summary-time').textContent=state.time!==null?timeLabel(state.time):'Par téléphone';
     $$('[data-edit]').forEach(button => {button.disabled=state.complete || Number(button.dataset.edit)>state.reached;});
     $$('[data-step]').forEach(button => {
       const step=Number(button.dataset.step);
@@ -106,7 +99,7 @@ if (typeof document !== 'undefined') (() => {
     if(reduced.matches||lastInput==='keyboard') panel.classList.add('is-active');
     else requestAnimationFrame(() => requestAnimationFrame(() => {if(version===transitionVersion)panel.classList.add('is-active');}));
     updateSummary();
-    announce(`Étape ${step+1} sur 4\u00a0: ${['prestation','jour','heure','coordonnées'][step]}. Simulation uniquement.`);
+    announce(`Étape ${step+1} sur 4\u00a0: ${['prestation','téléphone','heure','coordonnées'][step]}. Simulation uniquement.`);
     if(focus)focusHeading(step);
   }
   function renderDays() {

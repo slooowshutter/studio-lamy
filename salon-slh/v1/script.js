@@ -7,17 +7,17 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const NB = '\u00a0';
   const services = [
-    { id: 'courts', name: 'Shampoing, coupe & brushing', detail: 'Cheveux courts', minutes: 45, price: 40 },
-    { id: 'mi-longs', name: 'Shampoing, coupe & brushing', detail: 'Cheveux mi-longs', minutes: 45, price: 44 },
-    { id: 'longs', name: 'Shampoing, coupe & brushing', detail: 'Cheveux longs', minutes: 60, price: 48 },
-    { id: 'homme', name: 'Coupe homme', detail: 'Classique ou dégradé américain / taper', minutes: 30, price: 23 },
-    { id: 'barbe', name: 'Entretien de barbe', detail: '', minutes: 20, price: 12 },
-    { id: 'petit', name: 'Enfant de moins de 3 ans', detail: '', minutes: 20, price: 14 },
-    { id: 'garcon', name: 'Garçon de moins de 12 ans', detail: '', minutes: 30, price: 17 },
-    { id: 'fille', name: 'Fille de moins de 12 ans', detail: '', minutes: 30, price: 26 }
+    { id: 'courts', name: 'Shampoing, coupe & brushing', detail: 'Cheveux courts', price: 40 },
+    { id: 'mi-longs', name: 'Shampoing, coupe & brushing', detail: 'Cheveux mi-longs', price: 44 },
+    { id: 'longs', name: 'Shampoing, coupe & brushing', detail: 'Cheveux longs', price: 48 },
+    { id: 'homme', name: 'Coupe homme', detail: 'Classique ou dégradé américain / taper', price: 23 },
+    { id: 'barbe', name: 'Entretien de barbe', detail: '', price: 12 },
+    { id: 'petit', name: 'Enfant de moins de 3 ans', detail: '', price: 14 },
+    { id: 'garcon', name: 'Garçon de moins de 12 ans', detail: '', price: 17 },
+    { id: 'fille', name: 'Fille de moins de 12 ans', detail: '', price: 26 }
   ];
   // Valeurs Planity / PagesJaunes ; la divergence FNC est visible dans la page.
-  const hours = { 0: null, 1: null, 2: [540,1140], 3: [540,1140], 4: [540,1140], 5: [540,1140], 6: [540,960] };
+  const hours = { 0: null, 1: null, 2: [540,1110], 3: [540,1110], 4: [540,1110], 5: [540,1110], 6: [540,960] };
   const state = { service: null, date: null, time: null, step: 0 };
   const money = n => `${n}${NB}€`;
   const clock = m => `${Math.floor(m / 60)}${NB}h${m % 60 ? NB + String(m % 60).padStart(2,'0') : ''}`;
@@ -53,7 +53,7 @@
     if (!range || !service) return [];
     const seed = Number(iso(date).replaceAll('-',''));
     const slots = [];
-    for (let time = range[0]; time + service.minutes <= range[1]; time += 15) {
+    for (let time = range[0]; time < range[1]; time += 15) {
       const past = iso(date) < now.date || (iso(date) === now.date && time <= now.minutes);
       const busy = ((seed + time * 17) % 11) < 2;
       slots.push({ time, disabled: past || busy, reason: past ? 'Passé' : busy ? 'Déjà pris' : 'Disponible' });
@@ -78,7 +78,7 @@
     $('#summary-date').textContent = state.date ? fullDate(utcDate(state.date)) : 'Votre jour';
     $('#summary-time').textContent = state.time !== null ? clock(state.time) : 'Votre heure';
     $('#summary-price').textContent = service ? money(service.price) : '—';
-    $('#summary-duration').textContent = service ? `${service.minutes}${NB}min · durée d’exemple, à confirmer.` : 'Durée d’exemple, à confirmer.';
+    $('#summary-duration').textContent = 'Durée à confirmer auprès du salon.';
     $$('[data-step]').forEach(button => {
       const step = +button.dataset.step;
       button.disabled = !canEnter(step);
@@ -96,7 +96,7 @@
     services.forEach(service => {
       const label = document.createElement('label');
       label.className = 'service-choice';
-      label.innerHTML = `<input type="radio" name="service" value="${service.id}"><span class="choice-copy">${service.name}<small>${service.detail ? service.detail + ' · ' : ''}${service.minutes}${NB}min (exemple)</small></span><span class="choice-price">${money(service.price)}</span>`;
+      label.innerHTML = `<input type="radio" name="service" value="${service.id}"><span class="choice-copy">${service.name}<small>${service.detail || 'Durée à confirmer auprès du salon'}</small></span><span class="choice-price">${money(service.price)}</span>`;
       fieldset.append(label);
     });
     fieldset.addEventListener('change',event => {
@@ -160,7 +160,7 @@
     });
     if (!slots.some(slot => slot.time === state.time && !slot.disabled)) state.time = null;
     const count = slots.filter(slot => !slot.disabled).length;
-    $('#time-note').textContent = count ? `${count} créneaux fictifs sélectionnables. La durée d’exemple est incluse dans les horaires affichés.` : 'Aucun créneau restant pour ce jour. Revenez au choix du jour.';
+    $('#time-note').textContent = count ? `${count} créneaux fictifs sélectionnables. Horaires et disponibilité à confirmer auprès du salon.` : 'Aucun créneau restant pour ce jour. Revenez au choix du jour.';
     summary();
   }
 
@@ -251,7 +251,7 @@
       if (!slotValid()) { state.time = null; showStep(1); announce('Le jour ou l’heure a expiré. Choisissez un nouveau créneau fictif.'); return; }
       // Les saisies utilisateur sont toujours écrites avec textContent.
       $('#success-copy').textContent = `${$('#first-name').value.trim()}, voici le résultat de votre essai à Brest.`;
-      $('#success-recap').textContent = `${state.service.name}${state.service.detail ? ' · ' + state.service.detail : ''} — ${fullDate(utcDate(state.date))}, ${clock(state.time)}. ${money(state.service.price)}, tarif indicatif${NB}; ${state.service.minutes}${NB}min, durée d’exemple à confirmer.`;
+      $('#success-recap').textContent = `${state.service.name}${state.service.detail ? ' · ' + state.service.detail : ''} — ${fullDate(utcDate(state.date))}, ${clock(state.time)}. ${money(state.service.price)}, tarif relevé sur Planity.`;
       showStep(4);
     });
     $('#restart').addEventListener('click',reset);

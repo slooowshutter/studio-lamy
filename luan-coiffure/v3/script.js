@@ -1,9 +1,9 @@
 document.documentElement.classList.add("js");
 
 const services = {
-  coupe: { name: "Coupe de cheveux", duration: 30, price: 25 },
-  barbe: { name: "Taille de barbe", duration: 20, price: 15 },
-  ensemble: { name: "Coupe + barbe", duration: 45, price: 35 }
+  coupe: { name: "Coiffure mixte" },
+  barbe: { name: "Taille de barbe" },
+  ensemble: { name: "Rasage" }
 };
 
 const state = {
@@ -83,7 +83,7 @@ const setSummary = () => {
   summaryService.textContent = chosen ? chosen.name : "Aucune prestation choisie";
   summaryDate.textContent = state.dateKey ? dateLabel(state.dateKey) : "Jour à choisir";
   summaryTime.textContent = state.time || "Heure à choisir";
-  summaryPrice.textContent = chosen ? `${chosen.price} €` : "—";
+  summaryPrice.textContent = chosen ? "À confirmer" : "—";
   summaryEdit.hidden = !chosen;
 };
 
@@ -127,7 +127,7 @@ const buildDays = () => {
       String(day.getUTCMonth() + 1).padStart(2, "0"),
       String(day.getUTCDate()).padStart(2, "0")
     ].join("-");
-    const closed = day.getUTCDay() === 0;
+    const closed = day.getUTCDay() === 0 || day.getUTCDay() === 1;
     const button = document.createElement("button");
     const label = dateLabel(key, "short").replace(".", "");
     const weekday = label.split(" ")[0];
@@ -137,8 +137,8 @@ const buildDays = () => {
     button.dataset.date = key;
     button.disabled = closed;
     button.setAttribute("aria-pressed", "false");
-    button.setAttribute("aria-label", closed ? `${dateLabel(key)}, fermé` : dateLabel(key));
-    button.innerHTML = `<span>${weekday}</span><strong>${number}</strong><small>${closed ? "Fermé" : "Choisir"}</small>`;
+    button.setAttribute("aria-label", closed ? `${dateLabel(key)}, ${day.getUTCDay() === 1 ? "à confirmer" : "fermé"}` : dateLabel(key));
+    button.innerHTML = `<span>${weekday}</span><strong>${number}</strong><small>${closed ? (day.getUTCDay() === 1 ? "À confirmer" : "Fermé") : "Choisir"}</small>`;
     dayList.append(button);
   }
 };
@@ -146,7 +146,7 @@ const buildDays = () => {
 const hoursForDate = (key) => {
   const weekday = utcDateForKey(key).getUTCDay();
   if (weekday === 0) return null;
-  if (weekday === 1) return { open: 12 * 60, close: 19 * 60 };
+  if (weekday === 1) return null;
   if (weekday === 6) return { open: 8 * 60, close: 17 * 60 };
   return { open: 9 * 60, close: 19 * 60 };
 };
@@ -171,13 +171,13 @@ const renderSlots = () => {
   if (!chosen || !hours) return;
 
   document.querySelector("#slot-date-label").textContent =
-    `${dateLabel(state.dateKey)} · durée indicative de ${chosen.duration} min.`;
+    `${dateLabel(state.dateKey)} · créneaux fictifs.`;
 
   const todayKey = nowParisKey();
   const nowMinutes = currentParisMinutes();
   let availableCount = 0;
 
-  for (let minute = hours.open; minute + chosen.duration <= hours.close; minute += 30) {
+  for (let minute = hours.open; minute < hours.close; minute += 30) {
     const time = formatTime(minute);
     const past = state.dateKey === todayKey && minute <= nowMinutes;
     const booked = !past && hashSlot(`${state.dateKey}-${minute}-${state.serviceId}`) % 7 === 0;
@@ -226,7 +226,7 @@ const renderConfirmRecap = () => {
     recapLine("Prestation", chosen ? chosen.name : "À choisir"),
     recapLine("Jour", state.dateKey ? dateLabel(state.dateKey) : "À choisir"),
     recapLine("Heure", state.time || "À choisir"),
-    recapLine("Tarif indicatif", chosen ? `${chosen.price} €` : "À confirmer")
+    recapLine("Tarif", "À confirmer")
   );
 };
 
@@ -280,14 +280,14 @@ const showSuccess = () => {
     recapLine("Prestation", chosen.name),
     recapLine("Jour", dateLabel(state.dateKey)),
     recapLine("Heure", state.time),
-    recapLine("Montant indicatif", `${chosen.price} €`)
+    recapLine("Tarif", "À confirmer")
   );
   bookingForm.hidden = true;
   bookingSuccess.hidden = false;
   summaryService.textContent = chosen.name;
   summaryDate.textContent = dateLabel(state.dateKey);
   summaryTime.textContent = state.time;
-  summaryPrice.textContent = `${chosen.price} €`;
+  summaryPrice.textContent = "À confirmer";
   summaryEdit.hidden = true;
   bookingSuccess.querySelector("h3").focus({ preventScroll: true });
 };
@@ -296,7 +296,6 @@ const openCalendarFile = () => {
   const chosen = service();
   if (!chosen || !state.dateKey || !state.time) return;
   const startMinutes = Number(state.time.slice(0, 2)) * 60 + Number(state.time.slice(-2));
-  const endMinutes = startMinutes + chosen.duration;
   const datePart = state.dateKey.replaceAll("-", "");
   const timePart = (minutes) =>
     `${String(Math.floor(minutes / 60)).padStart(2, "0")}${String(minutes % 60).padStart(2, "0")}00`;
@@ -304,11 +303,10 @@ const openCalendarFile = () => {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Studio Lamy//Luan Coiffure preview//FR",
+    "PRODID:-//Studio Lamy//Luan Coiffure apercu//FR",
     "BEGIN:VEVENT",
     `DTSTART:${datePart}T${timePart(startMinutes)}`,
-    `DTEND:${datePart}T${timePart(endMinutes)}`,
-    `SUMMARY:${escapeICS(`Rendez-vous — Luan Coiffure — ${chosen.name}`)}`,
+    `SUMMARY:${escapeICS(`Simulation — Luan Coiffure — ${chosen.name}`)}`,
     `DESCRIPTION:${escapeICS("Simulation à confirmer auprès du salon. Rien n’a été envoyé.")}`,
     `LOCATION:${escapeICS("9 rue Eugène-Gilbert, 63000 Clermont-Ferrand")}`,
     "END:VEVENT",

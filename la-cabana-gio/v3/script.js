@@ -33,30 +33,10 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const services = {
-    curl: {
-      label: 'Coupe sur cheveux secs · boucles ou frisures',
-      shortLabel: 'Coupe à sec · boucles ou frisures',
-      duration: 45,
-      price: null
-    },
-    brushing: {
-      label: 'Shampoing, coupe et brushing',
-      shortLabel: 'Shampoing, coupe et brushing',
-      duration: 45,
-      price: 30
-    },
-    men: {
-      label: 'Coupe homme',
-      shortLabel: 'Coupe homme',
-      duration: 30,
-      price: 23
-    },
-    color: {
-      label: 'Coupe et couleur',
-      shortLabel: 'Coupe et couleur',
-      duration: 90,
-      price: 54
-    }
+    curl: { label: 'Coupe sur cheveux secs', shortLabel: 'Coupe sur cheveux secs' },
+    brushing: { label: 'Shampoing, coupe et brushing', shortLabel: 'Shampoing, coupe et brushing' },
+    men: { label: 'Coupe homme', shortLabel: 'Coupe homme' },
+    color: { label: 'Coupe et coloration', shortLabel: 'Coupe et coloration' }
   };
 
   const openingHours = {
@@ -115,10 +95,7 @@
   const titleCase = (text) => text ? text.charAt(0).toLocaleUpperCase('fr-FR') + text.slice(1) : text;
   const fullDayLabel = (iso) => titleCase(fullDateFormat.format(dateFromISO(iso)));
   const serviceFor = (key = state.service) => key ? services[key] : null;
-  const priceLabel = (service = serviceFor()) => {
-    if (!service || service.price === null) return 'À confirmer';
-    return `${service.price} € · indicatif`;
-  };
+  const priceLabel = () => 'À confirmer';
   const timeLabel = (value) => value ? `${value.slice(0, 2)} h ${value.slice(3)}` : 'À choisir';
 
   const announce = (message) => {
@@ -249,7 +226,7 @@
 
     let slotCount = 0;
     let availableCount = 0;
-    for (let start = range[0]; start + service.duration <= range[1]; start += 30) {
+    for (let start = range[0]; start < range[1]; start += 30) {
       const value = asClock(start);
       const isPast = today && start <= parisNow.minutes;
       const isTaken = !isPast && hashText(`${state.date}-${state.service}-${value}`) % 7 === 2;
@@ -261,7 +238,7 @@
       }
     }
 
-    $('#slot-day-copy').textContent = `${fullDayLabel(state.date)} · durée de démonstration ${service.duration} min, à confirmer.`;
+    $('#slot-day-copy').textContent = `${fullDayLabel(state.date)} · créneaux fictifs.`;
 
     periods.forEach((period, periodIndex) => {
       if (!period.slots.length) return;
@@ -307,7 +284,7 @@
     if (!slotCount) {
       const message = doc.createElement('p');
       message.className = 'slot-empty';
-      message.textContent = 'Aucun créneau indicatif ne correspond à cette durée. Choisissez un autre jour.';
+      message.textContent = 'Aucun créneau fictif pour ce jour. Choisissez un autre jour.';
       slotGroups.append(message);
     } else if (!availableCount) {
       const message = doc.createElement('p');

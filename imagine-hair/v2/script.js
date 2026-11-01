@@ -300,13 +300,13 @@ window.__site = 1;
       const free = list.filter((s) => s.free).length;
       const over = open && list.length > 0 && list.every((s) => s.past);
       const dis = !open || free === 0;
-      const why = shut ? 'fermé' : fer ? 'férié' : over ? 'terminé' : 'complet';
+      const why = shut ? 'fermé' : fer ? 'férié' : over ? 'terminé' : 'aucun créneau fictif';
       const tag = dis ? why : d.i === 0 ? 'auj.' : d.i === 1 ? 'demain' : fmtMon.format(d.date);
       let aria = cap(fmtLong.format(d.date));
       if (shut) aria += ', fermé';
       else if (fer) aria += ', jour férié, ouverture à confirmer';
       else if (dis) aria += `, ${why}`;
-      else aria += `, ${free} créneau${free > 1 ? 'x' : ''} libre${free > 1 ? 's' : ''}`;
+      else aria += `, ${free} créneau${free > 1 ? 'x' : ''} fictif${free > 1 ? 's' : ''}`;
       return `<label class="day"><input type="radio" name="day" value="${d.iso}" aria-label="${aria}"${dis ? ' disabled' : ''}${state.day === d.iso && !dis ? ' checked' : ''}><span class="day__c" aria-hidden="true"><span class="day__w">${fmtW.format(d.date).replace('.', '')}</span><span class="day__d">${d.date.getUTCDate()}</span><span class="day__m">${tag}</span></span></label>`;
     }).join('');
     if (state.day && !$(`input[value="${state.day}"]:not(:disabled)`, wrap)) { state.day = null; state.time = null; }
@@ -321,7 +321,7 @@ window.__site = 1;
     const length = durOf(svc, state.len);
     const slots = slotsFor(day, length);
     const free = slots.filter((s) => s.free).length;
-    note.textContent = `${cap(fmtLong.format(day.date))}, ouvert de ${hm(CFG.hours[day.dow][0])} à ${hm(CFG.hours[day.dow][1])} · ${free} créneau${free > 1 ? 'x' : ''} libre${free > 1 ? 's' : ''} pour ${dur(length)} de prestation.`;
+    note.textContent = `Simulation : créneaux fictifs. ${cap(fmtLong.format(day.date))}, ouvert de ${hm(CFG.hours[day.dow][0])} à ${hm(CFG.hours[day.dow][1])} · ${free} créneau${free > 1 ? 'x' : ''} fictif${free > 1 ? 's' : ''} pour ${dur(length)} de prestation.`;
     if (!free) { wrap.innerHTML = `<p class="slots__empty">Plus aucun créneau ce jour-là pour cette durée. Choisissez un autre jour, ou appelez le ${CFG.phone.replace(/ /g, NB)}.</p>`; return; }
     const parts = [['Matin', 0, 720], ['Après-midi', 720, 1020], ['Fin de journée', 1020, 1440]];
     wrap.innerHTML = parts.map(([label, a, b], gi) => {
@@ -329,7 +329,7 @@ window.__site = 1;
       if (!list.length) return '';
       return `<div class="slots__g" role="group" aria-labelledby="sg-${gi}"><h4 id="sg-${gi}">${label}</h4><div class="slots__grid">${
         list.map((s) => {
-          const why = s.past ? ', passé' : s.taken ? ', déjà pris' : '';
+          const why = s.past ? ', passé' : s.taken ? ', indisponible dans la simulation' : '';
           return `<label class="slot"><input type="radio" name="time" value="${s.m}" aria-label="${slotTime(s.m)}${why}"${s.free ? '' : ' disabled'}${state.time === s.m && s.free ? ' checked' : ''}><span aria-hidden="true"><time datetime="${day.iso}T${iso(s.m)}">${slotTime(s.m)}</time></span></label>`;
         }).join('')
       }</div></div>`;

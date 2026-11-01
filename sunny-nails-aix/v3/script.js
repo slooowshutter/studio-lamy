@@ -46,9 +46,9 @@
   function minuteLabel(value) { return `${String(Math.floor(value / 60)).padStart(2, '0')}${NB}h${NB}${String(value % 60).padStart(2, '0')}`; }
 
   const services = {
-    classique: { name: 'Manucure classique, sans couleur', minutes: 30, price: 15 },
-    semi: { name: 'Manucure avec vernis semi-permanent', minutes: 45, price: 35 },
-    resine: { name: 'Gel ou résine sur ongles naturels', minutes: 90, price: 50 }
+    classique: { name: 'Manucure classique, sans couleur', minutes: 20, price: 15 },
+    semi: { name: 'Manucure avec vernis semi-permanent', minutes: 30, price: 35 },
+    resine: { name: 'Gel ou résine sur ongles naturels, sans capsule', minutes: 45, price: 50 }
   };
   const openingHours = {
     0: null,
@@ -193,7 +193,7 @@
     const recap = $('[data-recap-text]', booking);
     if (recap) {
       const lines = [getService()?.name, state.day ? dateSummary(state.day) : '', state.time ? timeSummary(state.time) : ''].filter(Boolean);
-      recap.textContent = lines.length ? `${lines.join(' · ')} · ${servicePriceLabel()} indicatifs` : 'Choisissez une prestation, un jour et une heure.';
+      recap.textContent = lines.length ? `${lines.join(' · ')} · ${servicePriceLabel()} relevés sur Planity, à confirmer` : 'Choisissez une prestation, un jour et une heure.';
     }
   }
 
@@ -372,7 +372,7 @@
     const end = icsDate(state.day, endTime);
     const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
     const title = `Rendez-vous Sunny Nails Aix — ${service.name}`;
-    const description = `Simulation d’aperçu. Rien n’a été envoyé.\nTarif indicatif : ${service.price} EUR, à confirmer.`;
+    const description = `Simulation d’aperçu. Rien n’a été envoyé.\nTarif relevé sur Planity : ${service.price} EUR, à confirmer.`;
     const lines = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Studio Lamy//Apercu Sunny Nails Aix//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
       'BEGIN:VEVENT', `UID:${Date.now()}-sunny-nails-aix@studiolamy.preview`, `DTSTAMP:${now}`,
@@ -395,7 +395,7 @@
     const successHeading = doc.createElement('h3');
     successHeading.textContent = 'Simulation enregistrée dans cette page.';
     const recap = doc.createElement('p');
-    recap.textContent = `${name}, ${service.name.toLocaleLowerCase('fr-FR')} · ${dateSummary(state.day)} à ${timeSummary(state.time)} · ${service.price}${NB}€ indicatifs.`;
+    recap.textContent = `${name}, ${service.name.toLocaleLowerCase('fr-FR')} · ${dateSummary(state.day)} à ${timeSummary(state.time)} · ${service.price}${NB}€ relevés sur Planity, à confirmer.`;
     const note = doc.createElement('p');
     note.textContent = 'Rien n’a été envoyé au salon. Cette demande ne réserve pas de rendez-vous.';
     success.replaceChildren(successHeading, recap, note, makeCalendarLink(name));

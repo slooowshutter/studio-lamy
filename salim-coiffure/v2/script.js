@@ -17,9 +17,9 @@
   document.querySelectorAll('.reveal').forEach((el, index) => { if (observer) { el.style.transitionDelay = `${index * 60}ms`; observer.observe(el); } else el.classList.add('visible'); });
 
   const services = [
-    { id: 'coupe', name: 'Coupe femme', duration: 45, price: 30 },
-    { id: 'balayage', name: 'Balayage', duration: 90, price: 70 },
-    { id: 'soin', name: 'Soin kératine', duration: 60, price: 55 }
+    { id: 'coupe', name: 'Coupe femme' },
+    { id: 'balayage', name: 'Balayage' },
+    { id: 'soin', name: 'Soin kératine' }
   ];
   const state = { step: 0, service: null, day: null, time: null, name: '', phone: '', complete: false };
   const content = document.getElementById('booking-content');
@@ -43,7 +43,7 @@
     const today = `${now.year}-${String(now.month).padStart(2, '0')}-${String(now.day).padStart(2, '0')}`;
     const seed = Number(dateKey(day).replaceAll('-', ''));
     const slots = [];
-    for (let minutes = 600, i = 0; minutes + service.duration <= close; minutes += 30, i++) {
+    for (let minutes = 600, i = 0; minutes < close; minutes += 30, i++) {
       const taken = (seed + i * 7) % 5 === 0;
       const past = dateKey(day) === today && minutes <= now.hour * 60 + now.minute;
       slots.push({ minutes, disabled: taken || past, reason: past ? 'passé' : taken ? 'déjà pris' : '' });
@@ -54,7 +54,7 @@
     document.getElementById('sum-service').textContent = state.service?.name || 'À choisir';
     document.getElementById('sum-day').textContent = state.day ? labelDay(state.day) : 'À choisir';
     document.getElementById('sum-time').textContent = state.time !== null ? timeLabel(state.time) : 'À choisir';
-    document.getElementById('sum-price').textContent = state.service ? `${state.service.price} €` : '—';
+    document.getElementById('sum-price').textContent = 'Par téléphone';
     const unlocked = [true, !!state.service, !!state.day, state.time !== null];
     nav.forEach((button, i) => {
       button.disabled = !unlocked[i] || state.complete;
@@ -68,7 +68,7 @@
     if (state.complete) {
       body = `<h3 tabindex="-1">Simulation terminée.</h3><p>Aucune réservation n’a été envoyée. Pour prendre rendez-vous, appelez le salon.</p><p id="success-recap"></p><a class="button orange-button" href="tel:+33643287233">Appeler le salon ↗</a> <button class="booking-back" type="button" data-restart>Recommencer</button>`;
     } else if (state.step === 0) {
-      body = `<h3 tabindex="-1">Quelle prestation&nbsp;?</h3><p>Tarifs indicatifs, à confirmer avec Salim coiffure. Durées et prestations d’exemple.</p><fieldset class="service-fieldset"><legend>Choisissez une prestation</legend>${services.map(s => `<label class="service-choice"><input type="radio" name="service" value="${s.id}" ${state.service?.id === s.id ? 'checked' : ''}><strong>${s.name}</strong><span>${s.duration} min · ${s.price} €</span></label>`).join('')}</fieldset><button class="booking-next" type="button" ${state.service ? '' : 'disabled'}>Choisir un jour →</button>`;
+      body = `<h3 tabindex="-1">Quelle prestation&nbsp;?</h3><p>Tarifs et prestations : appelez le salon au 06 43 28 72 33.</p><fieldset class="service-fieldset"><legend>Choisissez une prestation</legend>${services.map(s => `<label class="service-choice"><input type="radio" name="service" value="${s.id}" ${state.service?.id === s.id ? 'checked' : ''}><strong>${s.name}</strong><span>À confirmer</span></label>`).join('')}</fieldset><button class="booking-next" type="button" ${state.service ? '' : 'disabled'}>Choisir un jour →</button>`;
     } else if (state.step === 1) {
       body = `<h3 tabindex="-1">Quel jour&nbsp;?</h3><p>Horaires de répertoires à confirmer. Les disponibilités sont fictives.</p><div class="choice-grid">${days().map((d, i) => `<button type="button" data-day="${dateKey(d)}" class="${state.day && dateKey(state.day) === dateKey(d) ? 'selected' : ''}" aria-pressed="${!!state.day && dateKey(state.day) === dateKey(d)}" ${d.getUTCDay() === 0 ? 'disabled' : ''}>${i === 0 ? 'Aujourd’hui' : shortDay.format(d)}${d.getUTCDay() === 0 ? '<small>Fermé</small>' : ''}</button>`).join('')}</div><button class="booking-back" type="button">← Retour</button><button class="booking-next" type="button" ${state.day ? '' : 'disabled'}>Choisir une heure →</button>`;
     } else if (state.step === 2) {
@@ -78,7 +78,7 @@
     }
     content.innerHTML = `<div class="booking-panel${focus ? ' entering' : ''}">${body}</div>`;
     if (focus) requestAnimationFrame(() => content.querySelector('.booking-panel')?.classList.remove('entering'));
-    if (state.complete) document.getElementById('success-recap').textContent = `${state.name} · ${state.service.name} · ${labelDay(state.day)} à ${timeLabel(state.time)} · ${state.service.price} € indicatifs.`;
+    if (state.complete) document.getElementById('success-recap').textContent = `${state.name} · ${state.service.name} · ${labelDay(state.day)} à ${timeLabel(state.time)}.`;
     if (state.step === 3 && !state.complete) { document.getElementById('first-name').value = state.name; document.getElementById('phone').value = state.phone; }
     if (focus) content.querySelector('h3').focus({ preventScroll: true });
   }

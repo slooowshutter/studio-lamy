@@ -2,10 +2,10 @@ window.sunnyReady = true;
 (() => {
   'use strict';
   const services = [
-    {id:'resine', name:'Gel ou résine sur ongles naturels', duration:60, price:50},
-    {id:'semi', name:'Gel / résine & semi-permanent', duration:75, price:55},
-    {id:'manucure', name:'Manucure classique sans couleur', duration:30, price:15},
-    {id:'mains', name:'Manucure & semi-permanent', duration:45, price:35}
+    {id:'resine', name:'Gel ou résine sur ongles naturels, sans capsule', duration:45, price:50},
+    {id:'semi', name:'Gel / résine & semi-permanent', duration:60, price:55},
+    {id:'manucure', name:'Manucure classique sans couleur', duration:20, price:15},
+    {id:'mains', name:'Manucure & semi-permanent', duration:30, price:35}
   ];
   const state = {step:0, max:0, service:null, date:null, time:null, first:'', phone:''};
   const panel = document.querySelector('#step-content');
@@ -25,7 +25,7 @@ window.sunnyReady = true;
   function render(){
     summary();
     if(state.step===0){
-      panel.innerHTML = `<h3 tabindex="-1">Quelle prestation&nbsp;?</h3><p class="hint">Tarifs indicatifs, à confirmer avec Sunny Nails Aix. Durées données à titre d’exemple.</p><div class="service-options">${services.map(s=>`<label class="service-option"><input type="radio" name="service" value="${s.id}" ${state.service?.id===s.id?'checked':''}><span>${s.name}<small>${s.duration} min · durée exemple</small></span><strong>${s.price} €</strong></label>`).join('')}</div><button class="primary" type="button" data-next ${state.service?'':'disabled'}>Choisir un jour <span aria-hidden="true">→</span></button>`;
+      panel.innerHTML = `<h3 tabindex="-1">Quelle prestation&nbsp;?</h3><p class="hint">Tarifs relevés sur Planity, à confirmer avec Sunny Nails Aix.</p><div class="service-options">${services.map(s=>`<label class="service-option"><input type="radio" name="service" value="${s.id}" ${state.service?.id===s.id?'checked':''}><span>${s.name}<small>Durée à confirmer</small></span><strong>${s.price} €</strong></label>`).join('')}</div><button class="primary" type="button" data-next ${state.service?'':'disabled'}>Choisir un jour <span aria-hidden="true">→</span></button>`;
     } else if(state.step===1){
       const today = new Date(); today.setHours(0,0,0,0);
       const days = Array.from({length:14},(_,i)=>{const d=new Date(today);d.setDate(d.getDate()+i);return d;});
@@ -37,7 +37,7 @@ window.sunnyReady = true;
     } else if(state.step===3){
       panel.innerHTML = `<h3 tabindex="-1">Vos coordonnées</h3><p class="hint">Simulation uniquement&nbsp;: aucune donnée n’est envoyée.</p><form id="booking-form" novalidate><label class="field" for="first">Prénom<input id="first" name="first" autocomplete="given-name" value="${escapeText(state.first)}" aria-describedby="first-error"></label><p class="error" id="first-error"></p><label class="field" for="phone">Téléphone<input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${escapeText(state.phone)}" aria-describedby="phone-error"></label><p class="error" id="phone-error"></p><button class="primary" type="submit">Confirmer la simulation <span aria-hidden="true">→</span></button></form>`;
     } else {
-      panel.innerHTML = `<h3 tabindex="-1">Simulation terminée.</h3><p class="success-note">${escapeText(state.first)}, votre exemple&nbsp;: ${escapeText(state.service.name)}, le ${formatDay(state.date)} à ${formatTime(state.time)}, ${state.service.price}&nbsp;€ indicatifs.</p><p>Ce rendez-vous n’est pas réservé et rien n’a été envoyé. Pour contacter le salon, appelez le <a href="tel:+33695683748">06 95 68 37 48</a>.</p><button class="primary" type="button" data-reset>Recommencer <span aria-hidden="true">↻</span></button>`;
+      panel.innerHTML = `<h3 tabindex="-1">Simulation terminée.</h3><p class="success-note">${escapeText(state.first)}, votre exemple&nbsp;: ${escapeText(state.service.name)}, le ${formatDay(state.date)} à ${formatTime(state.time)}, ${state.service.price}&nbsp;€ relevés sur Planity, à confirmer.</p><p>Ce rendez-vous n’est pas réservé et rien n’a été envoyé. Pour contacter le salon, appelez le <a href="tel:+33695683748">06 95 68 37 48</a>.</p><button class="primary" type="button" data-reset>Recommencer <span aria-hidden="true">↻</span></button>`;
     }
   }
   function go(n){
@@ -70,12 +70,6 @@ window.sunnyReady = true;
   document.querySelectorAll('.filter').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.filter').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});document.querySelectorAll('.price-row').forEach(row=>{row.hidden=button.dataset.filter!=='all' && row.dataset.category!==button.dataset.filter;});}));
   render(); requestAnimationFrame(()=>document.documentElement.classList.add('ready'));
   const tiles=[...document.querySelectorAll('.reveal')]; tiles.forEach((tile,i)=>tile.style.setProperty('--r',i));
-  function countRating() {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const target=document.querySelector('.rating-count');
-    const start=performance.now();
-    function tick(now){const progress=Math.min((now-start)/550,1);target.textContent=(4.5*(1-Math.pow(1-progress,3))).toFixed(1).replace('.',',');if(progress<1)requestAnimationFrame(tick);}
-    requestAnimationFrame(tick);
-  }
-  if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('revealed');if(entry.target.classList.contains('rating'))countRating();observer.unobserve(entry.target);}}),{threshold:.12});tiles.forEach(tile=>observer.observe(tile));}else tiles.forEach(tile=>tile.classList.add('revealed'));
+
+  if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('revealed');observer.unobserve(entry.target);}}),{threshold:.12});tiles.forEach(tile=>observer.observe(tile));}else tiles.forEach(tile=>tile.classList.add('revealed'));
 })();

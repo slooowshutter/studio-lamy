@@ -1,10 +1,10 @@
-/* Réservation locale, sans envoi ni stockage. Les durées sont des exemples. */
+/* Réservation locale, sans envoi ni stockage.  */
 (() => {
   'use strict';
   const SERVICES = [
-    { id: 'pose', name: 'Pose gel / résine', minutes: 75 },
-    { id: 'remplissage', name: 'Remplissage', minutes: 60 },
-    { id: 'semi', name: 'Vernis semi-permanent', minutes: 45 }
+    { id: 'pose', name: 'Pose gel / résine' },
+    { id: 'remplissage', name: 'Remplissage' },
+    { id: 'semi', name: 'Vernis semi-permanent' }
   ];
   const NB = '\u00a0';
   const parisFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
@@ -17,7 +17,6 @@
   }
   const civilDate = iso => new Date(`${iso}T12:00:00Z`);
   const timeText = minutes => `${Math.floor(minutes / 60)}${NB}h${minutes % 60 ? NB + String(minutes % 60).padStart(2, '0') : ''}`;
-  const durationText = minutes => minutes < 60 ? `${minutes}${NB}min` : timeText(minutes);
   const formatDate = iso => longDate.format(civilDate(iso));
   const hoursFor = iso => civilDate(iso).getUTCDay() === 0 ? null : [540, 1140];
   function holiday(iso) {
@@ -31,13 +30,13 @@
     const easter = Date.UTC(year, month - 1, day, 12);
     return [1, 39, 50].some(offset => new Date(easter + offset * 86400000).toISOString().slice(0, 10) === iso);
   }
-  function slotsFor(iso, duration, now = new Date()) {
+  function slotsFor(iso, now = new Date()) {
     const hours = hoursFor(iso);
     if (!hours) return [];
     const current = parisNow(now);
     const seed = Number(iso.replaceAll('-', ''));
     const slots = [];
-    for (let minute = hours[0]; minute + duration <= hours[1]; minute += 30) {
+    for (let minute = hours[0]; minute < hours[1]; minute += 30) {
       const past = iso < current.iso || (iso === current.iso && minute <= current.minutes);
       const taken = (seed + minute / 30) % 7 < 2;
       slots.push({ minute, disabled: past || taken, reason: past ? 'passé' : taken ? 'déjà pris' : 'exemple' });
@@ -139,7 +138,7 @@
     const fragment = document.createDocumentFragment();
     SERVICES.forEach(service => {
       const content = document.createElement('span');
-      content.append(span(service.name, 'service-name'), span(`${durationText(service.minutes)} · durée exemple, à confirmer`, 'fine'), span('Tarif à confirmer avec le salon', 'fine'));
+      content.append(span(service.name, 'service-name'), span('Durée à confirmer avec le salon', 'fine'), span('Tarif à confirmer avec le salon', 'fine'));
       fragment.append(radio('service', service.id, content, false, state.service?.id === service.id));
     });
     $('#service-options').replaceChildren(fragment);
@@ -149,14 +148,14 @@
     nextDays().forEach((iso, index) => {
       const date = civilDate(iso);
       const sunday = !hoursFor(iso);
-      const available = !sunday && slotsFor(iso, state.service.minutes).some(slot => !slot.disabled);
+      const available = !sunday && slotsFor(iso).some(slot => !slot.disabled);
       const content = document.createElement('span');
       content.className = 'choice-content';
       content.append(span(index === 0 ? 'Aujourd’hui' : shortDay.format(date)));
       const number = document.createElement('b'); number.textContent = date.getUTCDate();
       content.append(number, span(shortMonth.format(date)));
       const note = document.createElement('small');
-      note.textContent = sunday ? 'fermé · exemple' : !available ? 'complet / passé' : holiday(iso) ? 'férié · à confirmer' : '9 h – 19 h';
+      note.textContent = sunday ? 'non proposé' : !available ? 'complet / passé' : holiday(iso) ? 'férié · à confirmer' : '9 h – 19 h';
       content.append(note);
       fragment.append(radio('day', iso, content, !available, state.date === iso));
     });
@@ -166,7 +165,7 @@
     if (!state.date || !state.service) return;
     $('#slot-date').textContent = formatDate(state.date);
     const fragment = document.createDocumentFragment();
-    const slots = slotsFor(state.date, state.service.minutes);
+    const slots = slotsFor(state.date);
     slots.forEach(slot => {
       const content = document.createElement('span'); content.className = 'choice-content';
       const note = document.createElement('small'); note.textContent = slot.reason;
@@ -180,7 +179,7 @@
     $('#summary-service').textContent = state.service?.name || 'Une prestation à choisir';
     $('#summary-date').textContent = state.date ? formatDate(state.date) : 'Un jour à choisir';
     $('#summary-time').textContent = state.time !== null ? timeText(state.time) : 'Une heure à choisir';
-    $('#summary-duration').textContent = state.service ? `${durationText(state.service.minutes)} · exemple à confirmer` : 'Exemple à choisir';
+    $('#summary-duration').textContent = 'À confirmer avec le salon';
     stepButtons.forEach((button, index) => {
       button.disabled = state.success || (index > 0 && !state.service) || (index > 1 && !state.date) || (index > 2 && state.time === null);
       if (index === state.step && !state.success) button.setAttribute('aria-current', 'step');
@@ -189,7 +188,7 @@
     if (state.service && state.date && state.time !== null) $('#final-recap').textContent = recap();
   }
   function recap() {
-    return `${state.service.name} · ${formatDate(state.date)} à ${timeText(state.time)} · durée exemple ${durationText(state.service.minutes)}, à confirmer · tarif à confirmer avec le salon. Adresse${NB}: 12 rue d’Aguesseau, Limoges.`;
+    return `${state.service.name} · ${formatDate(state.date)} à ${timeText(state.time)} · durée à confirmer · tarif à confirmer avec le salon. Adresse${NB}: 12 rue d’Aguesseau, Limoges.`;
   }
   function finishTransition() {
     clearTimeout(transitionTimer);
@@ -244,7 +243,7 @@
   function validateStep(step) {
     if (step === 0 && !state.service) { error('#service-error', 'Choisissez une prestation pour continuer.', $('input[name="service"]')); return false; }
     if (step === 1) {
-      const current = state.date && nextDays().includes(state.date) && slotsFor(state.date, state.service.minutes).some(slot => !slot.disabled);
+      const current = state.date && nextDays().includes(state.date) && slotsFor(state.date).some(slot => !slot.disabled);
       if (!current) {
         state.date = null; state.time = null; renderDays(); updateSummary();
         error('#day-error', 'Choisissez un jour disponible dans cet exemple.', $('input[name="day"]:not(:disabled)')); return false;
@@ -274,7 +273,7 @@
     if (next === 1) renderDays();
     if (next === 2) renderSlots();
     if (next === 3) {
-      const slot = slotsFor(state.date, state.service.minutes).find(item => item.minute === state.time);
+      const slot = slotsFor(state.date).find(item => item.minute === state.time);
       if (!slot || slot.disabled) {
         state.time = null; updateSummary(); renderSlots();
         error('#time-error', 'Cette heure vient de passer. Choisissez un autre créneau.'); return;
@@ -311,7 +310,7 @@
     event.preventDefault();
     if (!state.service || !state.date || state.time === null) { goTo(!state.service ? 0 : !state.date ? 1 : 2); return; }
     if (!validateContact()) return;
-    const slot = slotsFor(state.date, state.service.minutes).find(item => item.minute === state.time);
+    const slot = slotsFor(state.date).find(item => item.minute === state.time);
     if (!slot || slot.disabled) {
       state.time = null; renderSlots(); goTo(2); error('#time-error', 'Cette heure vient de passer. Choisissez un autre créneau.'); return;
     }

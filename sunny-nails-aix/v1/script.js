@@ -20,7 +20,7 @@ const SunnyBooking = (() => {
   function total(state) {
     const service = services[state.service];
     if (!service) return { minutes: 0, cents: 0 };
-    return { minutes: service.minutes + (state.nailart ? 5 : 0) + (state.french && state.service !== 'french' ? 10 : 0), cents: service.cents + (state.nailart ? 150 : 0) + (state.french && state.service !== 'french' ? 500 : 0) };
+    return { minutes: service.minutes, cents: service.cents };
   }
   function slots(day, duration, current = now()) {
     if (!duration || weekday(day) === 0) return [];
@@ -72,7 +72,7 @@ const SunnyBooking = (() => {
     const service = core.services[state.service];
     if (!service) return '';
     const amount = core.total(state);
-    return `${service.name}${state.nailart || state.french ? ` + ${extraLabel()}` : ''} · ${state.day ? core.dateLabel(state.day) : 'jour à choisir'}${state.time !== null ? ` à ${core.timeLabel(state.time)}` : ''} · ${amount.minutes}\u00a0min · ${core.money(amount.cents)} (indicatif).`;
+    return `${service.name}${state.nailart || state.french ? ` + ${extraLabel()}` : ''} · ${state.day ? core.dateLabel(state.day) : 'jour à choisir'}${state.time !== null ? ` à ${core.timeLabel(state.time)}` : ''}.`;
   }
   function updateSummary() {
     const service = core.services[state.service];
@@ -81,10 +81,10 @@ const SunnyBooking = (() => {
     $('#summary-extra').textContent = extraLabel();
     $('#summary-day').textContent = state.day ? core.dateLabel(state.day) : 'À choisir';
     $('#summary-time').textContent = state.time !== null ? core.timeLabel(state.time) : 'À choisir';
-    $('#summary-price').textContent = service ? core.money(amount.cents) : '—';
-    $('#summary-duration').textContent = service ? `${amount.minutes}\u00a0min au total · durée indicative` : 'La durée dépend de votre sélection.';
+    $('#summary-price').textContent = 'À confirmer';
+    $('#summary-duration').textContent = 'Durée à confirmer avec le salon.';
     $('#final-recap').textContent = recap();
-    mobileSummary.textContent = service ? `${service.name}${state.nailart || state.french ? ` + ${extraLabel()}` : ''} · ${amount.minutes}\u00a0min · ${core.money(amount.cents)} indicatifs${state.day ? ` · ${new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${state.day}T12:00:00Z`))}` : ''}${state.time !== null ? ` à ${core.timeLabel(state.time)}` : ''}` : 'Votre sélection apparaîtra ici.';
+    mobileSummary.textContent = service ? `${service.name}${state.nailart || state.french ? ` + ${extraLabel()}` : ''}${state.day ? ` · ${new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${state.day}T12:00:00Z`))}` : ''}${state.time !== null ? ` à ${core.timeLabel(state.time)}` : ''}` : 'Votre sélection apparaîtra ici.';
     stepButtons.forEach((button, index) => {
       button.disabled = state.done || index > state.unlocked;
       if (!state.done && index === state.step) button.setAttribute('aria-current', 'step');
@@ -138,7 +138,7 @@ const SunnyBooking = (() => {
     container.replaceChildren();
     const slots = core.slots(state.day, core.total(state).minutes);
     const available = slots.filter(slot => !slot.disabled);
-    $('#slot-caption').textContent = `${core.dateLabel(state.day)} · ${core.total(state).minutes}\u00a0min au total. ${available.length} créneaux fictifs libres. «\u00a0Déjà pris\u00a0» est également simulé.`;
+    $('#slot-caption').textContent = `${core.dateLabel(state.day)} · ${available.length} créneaux fictifs libres. «\u00a0Déjà pris\u00a0» est également simulé.`;
     if (!available.length) {
       const text = document.createElement('p'); text.className = 'empty-slots'; text.textContent = 'Aucun créneau pour cette durée. Revenez au choix du jour.'; container.append(text);
     }
@@ -205,9 +205,6 @@ const SunnyBooking = (() => {
     const input = event.target;
     if (input.name === 'service') {
       state.service = input.value;
-      const frenchInput = $('#french-extra');
-      frenchInput.disabled = input.value === 'french';
-      if (frenchInput.disabled) { frenchInput.checked = false; state.french = false; }
       resetSchedule();
     } else if (input.name === 'nailart' || input.name === 'extra-french') {
       state.nailart = $('#nail-art-extra').checked;
@@ -221,7 +218,7 @@ const SunnyBooking = (() => {
     }
     if (['service', 'nailart', 'extra-french', 'day', 'time'].includes(input.name)) {
       const amount = core.total(state);
-      announce(`Sélection mise à jour. ${amount.minutes}\u00a0min, ${core.money(amount.cents)} indicatifs.${state.day ? ` ${core.dateLabel(state.day)}.` : ''}${state.time !== null ? ` ${core.timeLabel(state.time)}.` : ''}`);
+      announce(`Sélection mise à jour.${state.day ? ` ${core.dateLabel(state.day)}.` : ''}${state.time !== null ? ` ${core.timeLabel(state.time)}.` : ''}`);
     }
   });
   $$('[data-next]').forEach(button => button.addEventListener('click', () => handleNext(Number(button.dataset.next))));

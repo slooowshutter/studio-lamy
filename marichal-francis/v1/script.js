@@ -3,12 +3,12 @@
   'use strict';
 
   const SERVICES = {
-    coupe: { name: 'Coupe masculine', duration: 30, price: 20 },
-    coiffage: { name: 'Coupe & coiffage', duration: 45, price: 25 },
-    soin: { name: 'Soin capillaire', duration: 15, price: 10 }
+    coupe: { name: 'Coupe masculine' },
+    coiffage: { name: 'Coiffure' },
+    soin: { name: 'Soin capillaire' }
   };
-  // Bottin, research dated 01/11/2026. Conflicting public hours: to confirm.
-  const HOURS = { 0: null, 1: null, 2: [480, 1140], 3: [540, 1140], 4: [540, 1140], 5: [540, 1140], 6: [480, 1080] };
+  // Horaires iCoiffeur, à confirmer auprès du salon.
+  const HOURS = { 0: null, 1: null, 2: [540, 1140], 3: [540, 1140], 4: [540, 1140], 5: [540, 1140], 6: [540, 1140] };
   const parisClock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   const dateLong = new Intl.DateTimeFormat('fr-FR', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long' });
   const dateShort = new Intl.DateTimeFormat('fr-FR', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' });
@@ -36,7 +36,7 @@
     if (!range || !service) return [];
     const seed = Number(key.replaceAll('-', ''));
     const slots = [];
-    for (let minute = range[0]; minute + service.duration <= range[1]; minute += 30) {
+    for (let minute = range[0]; minute < range[1]; minute += 30) {
       const past = key < now.key || (key === now.key && minute <= now.minutes);
       const occupied = ((seed * 13 + minute * 7) % 11) < 3;
       slots.push({ minute, disabled: past || occupied, reason: past ? 'Passé' : occupied ? 'Déjà pris' : 'Exemple' });
@@ -93,8 +93,8 @@
     $('#summary-service').textContent = service ? service.name : 'À choisir';
     $('#summary-day').textContent = state.day ? dateShort.format(dayDate(state.day)) : 'À choisir';
     $('#summary-time').textContent = state.time !== null ? formatTime(state.time) : 'À choisir';
-    $('#summary-price').textContent = service ? `${service.duration}\u00a0min · ${service.price}\u00a0€ (exemple)` : '—';
-    const recap = service && state.day && state.time !== null ? `${service.name} · ${dateLong.format(dayDate(state.day))} à ${formatTime(state.time)} · ${service.duration}\u00a0min · ${service.price}\u00a0€ indicatifs. Exemple uniquement, à confirmer avec le salon.` : '';
+    $('#summary-price').textContent = 'À demander au salon';
+    const recap = service && state.day && state.time !== null ? `${service.name} · ${dateLong.format(dayDate(state.day))} à ${formatTime(state.time)}. Simulation uniquement, à confirmer avec le salon.` : '';
     $('#confirmation-recap').textContent = recap;
     updateNav();
   }
@@ -194,7 +194,7 @@
       const changed = state.service !== input.value;
       state.service = input.value;
       if (changed) { state.day = null; state.time = null; }
-      announce(`${SERVICES[state.service].name}, ${SERVICES[state.service].duration} minutes, ${SERVICES[state.service].price} euros indicatifs. Exemple sélectionné.`);
+      announce(`${SERVICES[state.service].name} : sélection pour la simulation.`);
     } else if (input.name === 'day' && !input.disabled) {
       state.day = input.value; state.time = null;
       announce(`${dateLong.format(dayDate(state.day))} sélectionné pour la simulation.`);
@@ -245,7 +245,7 @@
       announce('Vérifiez les champs signalés. Aucune information n’a été envoyée.');
       return;
     }
-    $('#success-recap').textContent = `Votre exemple : ${SERVICES[state.service].name}, ${dateLong.format(dayDate(state.day))} à ${formatTime(state.time)}, ${SERVICES[state.service].duration}\u00a0min, ${SERVICES[state.service].price}\u00a0€ indicatifs.`;
+    $('#success-recap').textContent = `Votre exemple : ${SERVICES[state.service].name}, ${dateLong.format(dayDate(state.day))} à ${formatTime(state.time)}.`;
     // Contact data has no role after validation: clear it rather than retain it in the form.
     name.value = ''; phone.value = '';
     showStep(3, { success: true });

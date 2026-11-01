@@ -92,15 +92,7 @@
     maillot: { name: 'Maillot intégral + SIF', duration: 15, price: 25 },
     jambes: { name: 'Jambes complètes', duration: 20, price: 25 },
   };
-  const hours = {
-    0: null,
-    1: { open: 10 * 60, close: 21 * 60 },
-    2: { open: 10 * 60, close: 21 * 60 },
-    3: { open: 10 * 60, close: 21 * 60 },
-    4: { open: 10 * 60, close: 21 * 60 },
-    5: { open: 10 * 60, close: 22 * 60 },
-    6: { open: 10 * 60, close: 21 * 60 },
-  };
+  const hours = {};
 
   const form = document.querySelector('#booking-form');
   const status = document.querySelector('#booking-status');
@@ -167,13 +159,7 @@
   }
 
   function makeDays() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    state.days = Array.from({ length: 14 }, (_, offset) => {
-      const day = new Date(today);
-      day.setDate(today.getDate() + offset);
-      return { key: localDateKey(day), day };
-    });
+    state.days = [];
   }
 
   function createDateButton(item) {
@@ -307,12 +293,12 @@
   function renderSummary() {
     const service = services[state.service];
     if (selectionService) selectionService.textContent = service.name;
-    if (selectionDate) selectionDate.textContent = state.date ? fullDate(state.date) : 'À choisir';
-    if (selectionSlot) selectionSlot.textContent = state.slot === null ? 'À choisir' : `${formatTime(state.slot)} – ${formatTime(state.slot + service.duration)}`;
+    if (selectionDate) selectionDate.textContent = state.date ? fullDate(state.date) : 'Par téléphone';
+    if (selectionSlot) selectionSlot.textContent = state.slot === null ? 'Par téléphone' : `${formatTime(state.slot)} – ${formatTime(state.slot + service.duration)}`;
     if (selectionPrice) selectionPrice.textContent = `${service.price}\u00a0€`;
     if (selectionCompact) {
-      const dateLabel = state.date ? fullDate(state.date) : 'jour à choisir';
-      const slotLabel = state.slot === null ? 'heure à choisir' : formatTime(state.slot);
+      const dateLabel = state.date ? fullDate(state.date) : 'jour à confirmer par téléphone';
+      const slotLabel = state.slot === null ? 'heure à confirmer par téléphone' : formatTime(state.slot);
       selectionCompact.textContent = `${service.name} · ${dateLabel} · ${slotLabel}`;
     }
 
@@ -357,7 +343,7 @@
     setStepNav();
     if (number === 3) renderSlots();
     if (number === 4) renderFinalRecap();
-    if (announce && status) status.textContent = `Étape ${number} sur 4 : ${['', 'prestation', 'jour', 'heure', 'coordonnées'][number]}.`;
+    if (announce && status) status.textContent = `Étape ${number} sur 4 : ${['', 'prestation', 'téléphone', 'heure', 'coordonnées'][number]}.`;
     if (focus) {
       const heading = document.querySelector(`#step-title-${number}`);
       const activePanel = stepPanels.find((panel) => Number(panel.dataset.step) === number);

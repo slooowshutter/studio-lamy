@@ -84,10 +84,10 @@
   const panelByStep = new Map($$('[data-panel]', form).map((panel) => [Number(panel.dataset.panel), panel]));
   const stepNames = { 1: 'Prestation', 2: 'Jour', 3: 'Heure', 4: 'Coordonnées', 5: 'confirmation' };
   const services = {
-    women: { name: 'Coupe femme · cheveux courts', price: 40, duration: 45 },
-    men: { name: 'Coupe homme', price: 23, duration: 30 },
-    beard: { name: 'Entretien barbe', price: 12, duration: 20 },
-    child: { name: 'Coupe garçon · moins de 12 ans', price: 17, duration: 30 }
+    women: { name: 'Coupe femme · cheveux courts', price: 40 },
+    men: { name: 'Coupe homme', price: 23 },
+    beard: { name: 'Entretien barbe', price: 12 },
+    child: { name: 'Coupe garçon · moins de 12 ans', price: 17 }
   };
   const state = { service: '', date: '', time: '', firstName: '', phone: '' };
   let activeStep = 1;
@@ -165,7 +165,7 @@
     let availableCount = 0;
     let selectedTimeAvailable = false;
 
-    for (let start = hours.start; start + service.duration <= hours.end; start += 30) {
+    for (let start = hours.start; start < hours.end; start += 30) {
       const time = formatTime(start);
       const startDate = new Date(`${state.date}T${time}:00`);
       const past = isToday && startDate <= now;
@@ -382,7 +382,6 @@
   function downloadCalendar() {
     const service = services[state.service];
     const start = new Date(`${state.date}T${state.time}:00`);
-    const end = new Date(start.getTime() + service.duration * 60000);
     const lines = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -392,7 +391,6 @@
       `UID:${Date.now()}-salon-slh@studiolamy.local`,
       `DTSTAMP:${utcCalendarStamp(new Date())}`,
       `DTSTART:${calendarStamp(start)}`,
-      `DTEND:${calendarStamp(end)}`,
       `SUMMARY:${escapeCalendar(`Aperçu Salon SLH · ${service.name}`)}`,
       `LOCATION:${escapeCalendar('75 rue Auguste Kervern, 29200 Brest')}`,
       `DESCRIPTION:${escapeCalendar('Simulation Salon SLH. Créneau fictif, non transmis au salon.')}`,

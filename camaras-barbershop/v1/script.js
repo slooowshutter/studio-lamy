@@ -6,9 +6,9 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const NB = '\u00a0';
   const services = {
-    coupe: { name: 'Coupe homme', duration: 30, price: `20${NB}€ · exemple` },
-    barbe: { name: 'Taille de barbe', duration: 20, price: `12${NB}€ · exemple` },
-    duo: { name: 'Coupe & barbe', duration: 60, price: `Dès 30${NB}€ · à confirmer` }
+    coupe: { name: 'Coupe homme', price: 'À confirmer' },
+    barbe: { name: 'Taille de barbe', price: 'À confirmer' },
+    duo: { name: 'Coupe & barbe', price: 'À confirmer' }
   };
   // Directory schedule, not an assertion about current opening hours.
   // Sunday = 0. Planity: Tuesday–Saturday 10:00–20:00; Monday/Sunday closed.
@@ -51,11 +51,11 @@
     for (const char of value) out = ((out << 5) - out + char.charCodeAt(0)) | 0;
     return out >>> 0;
   }
-  function slotsFor(day, duration, now = parisNow()) {
+  function slotsFor(day, now = parisNow()) {
     const opening = hours[day.dow];
     if (!opening || day.iso < now.iso) return [];
     const slots = [];
-    for (let minute = opening[0]; minute + duration <= opening[1]; minute += 20) {
+    for (let minute = opening[0]; minute < opening[1]; minute += 20) {
       const past = day.iso === now.iso && minute <= now.minute;
       const taken = hash(`${day.iso}|${minute}|camaras`) % 7 < 2;
       slots.push({ minute, value: timeValue(minute), available: !past && !taken, reason: past ? 'passé' : taken ? 'déjà pris' : '' });
@@ -121,11 +121,11 @@
   function updateSummary() {
     const service = currentService();
     const day = currentDay();
-    $('#summary-service').textContent = service ? `${service.name} · ${service.duration}${NB}min` : 'À choisir';
+    $('#summary-service').textContent = service ? `${service.name}` : 'À choisir';
     $('#summary-day').textContent = day ? day.label : 'À choisir';
     $('#summary-time').textContent = state.time ? timeText(+state.time.slice(0, 2) * 60 + +state.time.slice(3)) : 'À choisir';
     $('#summary-price').textContent = service ? service.price : 'À confirmer';
-    $('#compact-service').textContent = service ? `${service.name} · ${service.duration}${NB}min · ${service.price}` : 'Prestation à choisir · prix à confirmer';
+    $('#compact-service').textContent = service ? `${service.name} · ${service.price}` : 'Prestation à choisir · prix à confirmer';
     $('#compact-date').textContent = day ? `${day.label}${state.time ? ' · ' + state.time.replace(':', NB + 'h' + NB) : ' · heure à choisir'}` : 'Jour et heure à choisir';
     $$('[data-edit]').forEach((button) => { button.disabled = +button.dataset.edit > reachableStep(); });
     stepButtons.forEach((button) => {
@@ -135,7 +135,7 @@
       else button.removeAttribute('aria-current');
     });
     if (service && day && state.time) {
-      $('#contact-recap').textContent = `${service.name} · ${service.duration}${NB}min · ${day.label} à ${state.time.replace(':', NB + 'h' + NB)}. Prix indicatif${NB}: ${service.price}. Au 96 avenue Yves Brunaud. Simulation uniquement.`;
+      $('#contact-recap').textContent = `${service.name} · ${day.label} à ${state.time.replace(':', NB + 'h' + NB)}. Tarif${NB}: ${service.price}. Au 96 avenue Yves Brunaud. Simulation uniquement.`;
     }
   }
 
@@ -162,10 +162,10 @@
     const fragment = document.createDocumentFragment();
     days.forEach((day, index) => {
       const closed = !hours[day.dow];
-      const soldOutToday = !closed && day.iso === now.iso && !slotsFor(day, currentService()?.duration || 30, now).some((slot) => slot.available);
+      const soldOutToday = !closed && day.iso === now.iso && !slotsFor(day, now).some((slot) => slot.available);
       const holiday = isHoliday(day);
-      const note = closed ? 'fermé' : soldOutToday ? 'terminé' : holiday ? 'férié*' : index === 0 ? 'aujourd’hui' : index === 1 ? 'demain' : monthFormat.format(day.date);
-      const a11y = `${day.label}${closed ? ', fermé dans la simulation' : soldOutToday ? ', aucun créneau restant' : holiday ? ', jour férié, ouverture à confirmer' : ''}`;
+      const note = closed ? 'non proposé' : soldOutToday ? 'terminé' : holiday ? 'férié*' : index === 0 ? 'aujourd’hui' : index === 1 ? 'demain' : monthFormat.format(day.date);
+      const a11y = `${day.label}${closed ? ', non proposé dans la simulation' : soldOutToday ? ', aucun créneau restant' : holiday ? ', jour férié, ouverture à confirmer' : ''}`;
       const { label, face } = radioLabel('day', day.iso, a11y, closed || soldOutToday);
       const weekday = document.createElement('span');
       weekday.textContent = weekFormat.format(day.date);
@@ -191,7 +191,7 @@
     const service = currentService();
     const container = $('#slot-options');
     if (!day || !service) { container.replaceChildren(); return; }
-    const slots = slotsFor(day, service.duration);
+    const slots = slotsFor(day);
     const fragment = document.createDocumentFragment();
     let free = 0;
     for (const slot of slots) {
@@ -211,7 +211,7 @@
       fragment.append(label);
     }
     container.replaceChildren(fragment);
-    $('#slot-caption').textContent = `${day.label} · ${free} créneau${free === 1 ? '' : 'x'} fictif${free === 1 ? '' : 's'} disponible${free === 1 ? '' : 's'}. ${isHoliday(day) ? `Jour férié${NB}: ouverture à confirmer. ` : ''}${free ? 'La durée de votre prestation est prise en compte.' : 'Choisissez un autre jour avec Retour.'}`;
+    $('#slot-caption').textContent = `${day.label} · ${free} créneau${free === 1 ? '' : 'x'} fictif${free === 1 ? '' : 's'} disponible${free === 1 ? '' : 's'}. ${isHoliday(day) ? `Jour férié${NB}: ouverture à confirmer. ` : ''}${free ? 'Ces horaires ne représentent pas des disponibilités réelles.' : 'Choisissez un autre jour avec Retour.'}`;
   }
 
   const nextLabels = ['Choisir le jour', 'Choisir l’heure', 'Vos coordonnées', 'Terminer la simulation'];
@@ -268,7 +268,7 @@
   function stillAvailable() {
     const day = currentDay();
     const service = currentService();
-    return day && service && slotsFor(day, service.duration).some((slot) => slot.value === state.time && slot.available);
+    return day && service && slotsFor(day).some((slot) => slot.value === state.time && slot.available);
   }
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -286,7 +286,7 @@
     const service = currentService();
     const day = currentDay();
     const time = state.time.replace(':', NB + 'h' + NB);
-    $('#result-message').textContent = `${nameField.value.trim()}, voici votre exemple${NB}: ${service.name.toLowerCase()}, ${service.duration}${NB}min, le ${day.label} à ${time}. Prix indicatif${NB}: ${service.price}. Camara’s barbershop, 96 avenue Yves Brunaud, Toulouse.`;
+    $('#result-message').textContent = `${nameField.value.trim()}, voici votre exemple${NB}: ${service.name.toLowerCase()}, le ${day.label} à ${time}. Tarif${NB}: ${service.price}. Camara’s barbershop, 96 avenue Yves Brunaud, Toulouse.`;
     state.complete = true;
     goTo(4);
   });

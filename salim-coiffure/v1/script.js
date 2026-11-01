@@ -3,10 +3,10 @@
   'use strict';
 
   const SERVICES = {
-    coupe: { name: 'Coupe femme', duration: 30, price: 25 },
-    balayage: { name: 'Balayage', duration: 120, price: 70 },
-    keratine: { name: 'Soin à la kératine', duration: 60, price: 45 },
-    lissage: { name: 'Lissage permanent', duration: 120, price: 90 }
+    coupe: { name: 'Coupe femme' },
+    balayage: { name: 'Balayage' },
+    keratine: { name: 'Soin à la kératine' },
+    lissage: { name: 'Lissage permanent' }
   };
   // Horaires concordants des annuaires, à confirmer. Minutes depuis minuit à Paris.
   const HOURS = { 0: null, 1: [600, 1200], 2: [600, 1260], 3: [600, 1260], 4: [600, 1260], 5: [600, 1260], 6: [600, 1260] };
@@ -37,13 +37,13 @@
       return { key, day, index, closed: !HOURS[day.getUTCDay()] };
     });
   }
-  function slotsFor(key, duration, instant = new Date()) {
+  function slotsFor(key, instant = new Date()) {
     const range = HOURS[dateObject(key).getUTCDay()];
-    if (!range || !Number.isFinite(duration) || duration <= 0) return [];
+    if (!range) return [];
     const now = parisNow(instant);
     const seed = Number(key.replaceAll('-', ''));
     const slots = [];
-    for (let minute = range[0]; minute + duration <= range[1]; minute += 30) {
+    for (let minute = range[0]; minute < range[1]; minute += 30) {
       const past = key < now.key || (key === now.key && minute <= now.minute);
       const busy = ((seed + minute / 30) % 7 === 1) || ((seed + minute / 30) % 11 === 3);
       slots.push({ minute, disabled: past || busy, reason: past ? 'Passé' : busy ? 'Déjà pris' : '' });
@@ -74,12 +74,12 @@
   function announce(message) { status.textContent = message; }
   function refreshSummary() {
     const service = SERVICES[state.service];
-    $('#summary-service').textContent = service ? `${service.name} · ${service.duration}${NB}min` : 'À choisir';
+    $('#summary-service').textContent = service ? service.name : 'À choisir';
     $('#summary-date').textContent = state.date ? dateLabel(state.date) : 'À choisir';
     $('#summary-time').textContent = state.time !== null ? timeLabel(state.time) : 'À choisir';
-    $('#summary-price').textContent = service ? `${service.price}${NB}€` : '—';
+    $('#summary-price').textContent = 'Par téléphone';
     $('#form-recap').textContent = service && state.date && state.time !== null
-      ? `Exemple : ${service.name}, le ${dateLabel(state.date)} à ${timeLabel(state.time)}. Durée d’exemple : ${service.duration}${NB}min. Total indicatif : ${service.price}${NB}€. Aucun envoi.` : '';
+      ? `Exemple : ${service.name}, le ${dateLabel(state.date)} à ${timeLabel(state.time)}. Aucun envoi.` : '';
     $$('[data-next]').forEach(button => {
       const step = Number(button.dataset.next);
       button.disabled = step === 1 ? !state.service : step === 2 ? !state.date : state.time === null;
@@ -127,7 +127,7 @@
     const radio = $(`input[name="service"][value="${value}"]`);
     if (radio) radio.checked = true;
     refreshSummary();
-    announce(`${SERVICES[value].name}, ${SERVICES[value].duration} minutes, ${SERVICES[value].price} euros indicatifs. Exemple à confirmer.`);
+    announce(`${SERVICES[value].name}, catégorie à confirmer auprès du salon.`);
   }
   $$('input[name="service"]').forEach(input => input.addEventListener('change', () => chooseService(input.value)));
   $$('[data-service]').forEach(link => link.addEventListener('click', () => {
@@ -170,7 +170,7 @@
     const container = $('#slot-options'); container.replaceChildren();
     $('#slot-error').textContent = '';
     if (!state.date || !state.service) return;
-    const slots = slotsFor(state.date, SERVICES[state.service].duration);
+    const slots = slotsFor(state.date);
     if (state.time !== null && !slots.some(slot => slot.minute === state.time && !slot.disabled)) state.time = null;
     const available = slots.filter(slot => !slot.disabled).length;
     $('#slot-caption').textContent = `${dateLabel(state.date)}. ${available} créneaux d’exemple disponibles. « Déjà pris » : indisponibilité simulée ; « Passé » : heure écoulée. Horaires à confirmer.`;
@@ -199,7 +199,7 @@
   }
   function slotStillValid() {
     return !!state.service && !!state.date && nextDays().some(day => day.key === state.date && !day.closed)
-      && slotsFor(state.date, SERVICES[state.service].duration).some(slot => slot.minute === state.time && !slot.disabled);
+      && slotsFor(state.date).some(slot => slot.minute === state.time && !slot.disabled);
   }
   function expireSlot() {
     state.time = null;
@@ -223,7 +223,7 @@
     }
     if (!slotStillValid()) { expireSlot(); return; }
     const service = SERVICES[state.service];
-    $('#success-recap').textContent = `Exemple : ${service.name}, le ${dateLabel(state.date)} à ${timeLabel(state.time)}. ${service.duration}${NB}min, ${service.price}${NB}€ indicatifs, à confirmer avec Salim coiffure.`;
+    $('#success-recap').textContent = `Exemple : ${service.name}, le ${dateLabel(state.date)} à ${timeLabel(state.time)}. Prestation à confirmer avec Salim coiffure.`;
     // Do not copy personal fields into the summary or retain them after the demonstration.
     name.value = ''; phone.value = '';
     state.completed = true;

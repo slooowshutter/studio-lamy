@@ -6,13 +6,13 @@
   const root = document.documentElement;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const services = [
-    { id: 'coupe-brushing', name: 'Coupe & brushing', detail: 'Shampoing, coupe et brushing · cheveux courts', duration: 30, price: 44 },
-    { id: 'homme', name: 'Coupe homme', detail: 'Shampoing et coupe', duration: 30, price: 26 },
-    { id: 'etudiant', name: 'Coupe étudiant', detail: 'Shampoing et coupe', duration: 30, price: 24 },
-    { id: 'junior', name: 'Coupe junior', detail: 'Moins de 12 ans · shampoing, coupe et séchage', duration: 30, price: 20 },
-    { id: 'brushing-court', name: 'Brushing · cheveux courts', detail: 'Shampoing et brushing', duration: 30, price: 26 },
-    { id: 'brushing-long', name: 'Brushing · cheveux longs', detail: 'Shampoing et brushing', duration: 30, price: 30 },
-    { id: 'soin', name: 'Soin profond', detail: 'Prestation de soin du menu Planity', duration: 30, price: 25 }
+    { id: 'coupe-brushing', name: 'Coupe & brushing', detail: 'Shampoing, coupe et brushing · cheveux courts' },
+    { id: 'homme', name: 'Coupe homme', detail: 'Shampoing et coupe' },
+    { id: 'etudiant', name: 'Coupe étudiant', detail: 'Shampoing et coupe' },
+    { id: 'junior', name: 'Coupe junior', detail: 'Moins de 12 ans · shampoing, coupe et séchage' },
+    { id: 'brushing-court', name: 'Brushing · cheveux courts', detail: 'Shampoing et brushing' },
+    { id: 'brushing-long', name: 'Brushing · cheveux longs', detail: 'Shampoing et brushing' },
+    { id: 'soin', name: 'Soin profond', detail: 'Prestation de soin du menu Planity' }
   ];
   // Dimanche = 0. Minutes depuis minuit. Source : Planity, 01/11/2026.
   const hours = [null, null, [540, 1080], [540, 1080], [540, 1080], [540, 1080], [540, 1020]];
@@ -33,7 +33,6 @@
   const dateKey = (date) => date.toISOString().slice(0, 10);
   const fullDate = (key) => dateFormat.format(dateFromKey(key));
   const timeLabel = (minutes) => `${Math.floor(minutes / 60)}\u00a0h${minutes % 60 ? `\u00a0${String(minutes % 60).padStart(2, '0')}` : ''}`;
-  const money = (price) => `${price}\u00a0€`;
   function holiday(key) {
     const year = Number(key.slice(0, 4));
     if (['01-01', '05-01', '05-08', '07-14', '08-15', '11-01', '11-11', '12-25'].includes(key.slice(5))) return true;
@@ -47,13 +46,13 @@
     const day = (h + l - 7 * m + 114) % 31 + 1;
     return [1, 39, 50].some(offset => dateKey(new Date(Date.UTC(year, month - 1, day + offset, 12))) === key);
   }
-  function slotData(key, duration) {
+  function slotData(key) {
     const now = parisNow();
     const period = hours[dateFromKey(key).getUTCDay()];
     if (!period || key < now.day) return [];
     const seed = [...key].reduce((sum, char) => sum + char.charCodeAt(0), 0);
     const slots = [];
-    for (let time = period[0]; time + duration <= period[1]; time += 30) {
+    for (let time = period[0]; time < period[1]; time += 30) {
       const past = key === now.day && time <= now.minutes;
       const taken = (seed + time / 30) % 5 === 0;
       slots.push({ time, disabled: past || taken, reason: past ? 'Passé' : taken ? 'Déjà pris' : '' });
@@ -62,7 +61,7 @@
   }
 
   function renderServices() {
-    $('#service-options').innerHTML = services.map(service => `<label class="service-choice"><input type="radio" name="service" value="${service.id}"${state.service?.id === service.id ? ' checked' : ''}><span><strong>${service.name}</strong><small>${service.detail} · ${service.duration}\u00a0min</small></span><span class="choice-price">${money(service.price)}</span></label>`).join('');
+    $('#service-options').innerHTML = services.map(service => `<label class="service-choice"><input type="radio" name="service" value="${service.id}"${state.service?.id === service.id ? ' checked' : ''}><span><strong>${service.name}</strong><small>${service.detail}</small></span><span class="choice-price">Simulation</span></label>`).join('');
   }
   function renderDays() {
     const today = parisNow().day;
@@ -84,10 +83,10 @@
   }
   function renderSlots() {
     if (!state.day || !state.service) return;
-    const slots = slotData(state.day, state.service.duration);
+    const slots = slotData(state.day);
     if (!slots.some(slot => slot.time === state.time && !slot.disabled)) state.time = null;
     const available = slots.filter(slot => !slot.disabled).length;
-    $('#slot-caption').textContent = `${fullDate(state.day)} · ${state.service.duration}\u00a0min · ${available} heures disponibles pour l’essai.${holiday(state.day) ? ' Jour férié : ouverture à confirmer.' : ''}${dateFromKey(state.day).getUTCDay() === 6 ? ' Samedi : fermeture à 17 h à confirmer.' : ''}`;
+    $('#slot-caption').textContent = `${fullDate(state.day)} · ${available} heures disponibles pour l’essai.${holiday(state.day) ? ' Jour férié : ouverture à confirmer.' : ''}${dateFromKey(state.day).getUTCDay() === 6 ? ' Samedi : fermeture à 17 h à confirmer.' : ''}`;
     $('#slot-options').innerHTML = slots.map(slot => `<label class="slot-choice"><input type="radio" name="slot" value="${slot.time}" aria-label="${timeLabel(slot.time)}${slot.reason ? `, ${slot.reason.toLowerCase()}` : ''}"${slot.disabled ? ' disabled' : ''}${state.time === slot.time ? ' checked' : ''}><span class="slot-time">${timeLabel(slot.time)}</span>${slot.reason ? `<small>${slot.reason}</small>` : ''}</label>`).join('');
     $('#slot-empty').hidden = available !== 0;
   }
@@ -95,10 +94,10 @@
     return step === 0 || (step === 1 && !!state.service) || (step === 2 && !!state.service && !!state.day) || (step === 3 && !!state.service && !!state.day && state.time !== null);
   }
   function sync() {
-    $('#summary-service').textContent = state.service ? `${state.service.name} · ${state.service.duration}\u00a0min` : 'À choisir';
+    $('#summary-service').textContent = state.service ? state.service.name : 'À choisir';
     $('#summary-day').textContent = state.day ? fullDate(state.day) : 'À choisir';
     $('#summary-time').textContent = state.time !== null ? timeLabel(state.time) : 'À choisir';
-    $('#summary-price').textContent = state.service ? money(state.service.price) : '—';
+    $('#summary-price').textContent = 'Par téléphone';
     $$('.step-nav button').forEach(button => {
       const step = Number(button.dataset.step);
       button.disabled = state.success || !allowedStep(step);
@@ -184,7 +183,7 @@
     const inputs = $$('.field input');
     const valid = inputs.map(validateField);
     if (valid.some(value => !value)) { inputs[valid.indexOf(false)].focus(); return; }
-    const slots = state.day && state.service ? slotData(state.day, state.service.duration) : [];
+    const slots = state.day && state.service ? slotData(state.day) : [];
     if (!slots.some(slot => slot.time === state.time && !slot.disabled)) {
       state.time = null;
       goTo(state.day ? 2 : 1);
@@ -192,7 +191,7 @@
       return;
     }
     state.success = true;
-    $('#success-recap').textContent = `${$('#first-name').value.trim()}, votre sélection d’essai : ${state.service.name}, ${fullDate(state.day)} à ${timeLabel(state.time)}, ${state.service.duration}\u00a0min, ${money(state.service.price)} (tarif indicatif).`;
+    $('#success-recap').textContent = `${$('#first-name').value.trim()}, votre sélection d’essai : ${state.service.name}, ${fullDate(state.day)} à ${timeLabel(state.time)}.`;
     // Les coordonnées ne figurent que dans le formulaire de cette page, jamais en stockage local.
     goTo(4);
   });

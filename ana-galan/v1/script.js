@@ -5,17 +5,16 @@
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const services = {
-    rituel: { name: 'Barbier à l’ancienne & massage de tête', duration: 45, price: 35 },
-    coupe: { name: 'Coupe', duration: 30, price: 25 },
-    couleur: { name: 'Coloration', duration: 90, price: 65 },
-    balayage: { name: 'Balayage', duration: 120, price: 85 }
+    rituel: { name: 'Barbier à l’ancienne' },
+    coupe: { name: 'Coupe' },
+    couleur: { name: 'Coloration' },
+    balayage: { name: 'Balayage' }
   };
   const openingHours = { 0: null, 1: null, 2: [540, 1110], 3: [540, 1110], 4: [540, 1110], 5: [540, 1110], 6: [540, 1080] };
   const state = { service: null, day: null, time: null, step: 0, maxStep: 0, complete: false, firstName: '' };
   const panels = $$('[data-panel]');
   const progress = $$('[data-step]');
   const timeFormat = (minutes) => `${Math.floor(minutes / 60)}\u00a0h${minutes % 60 ? `\u00a0${String(minutes % 60).padStart(2, '0')}` : ''}`;
-  const priceFormat = (price) => `${price}\u00a0€`;
   const dayDate = (key) => new Date(`${key}T12:00:00Z`);
   const dayLabel = (key) => new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', weekday: 'long', day: 'numeric', month: 'long' }).format(dayDate(key));
   const dayKey = (date) => date.toISOString().slice(0, 10);
@@ -37,7 +36,7 @@
     if (!service || !hours) return [];
     const seed = [...`${key}-${serviceId}`].reduce((sum, character) => sum + character.charCodeAt(0), 0);
     const result = [];
-    for (let minute = hours[0], index = 0; minute + service.duration <= hours[1]; minute += 30, index += 1) {
+    for (let minute = hours[0], index = 0; minute < hours[1]; minute += 30, index += 1) {
       const past = key < now.key || (key === now.key && minute <= now.minute);
       const taken = (seed + index * 7) % 6 === 0 || (seed + index * 3) % 11 === 0;
       result.push({ minute, disabled: past || taken, reason: past ? 'passé' : taken ? 'déjà pris' : '' });
@@ -58,8 +57,8 @@
     $('#summary-service').textContent = service ? service.name : 'À choisir';
     $('#summary-day').textContent = state.day ? dayLabel(state.day) : 'À choisir';
     $('#summary-time').textContent = state.time !== null ? timeFormat(state.time) : 'À choisir';
-    $('#summary-duration').textContent = service ? `${service.duration}\u00a0min` : '—';
-    $('#summary-price').textContent = service ? priceFormat(service.price) : '—';
+    $('#summary-duration').textContent = 'À demander';
+    $('#summary-price').textContent = 'À demander';
     const recap = $('#final-recap');
     recap.replaceChildren();
     if (service && state.day && state.time !== null) {
@@ -68,7 +67,7 @@
       const details = document.createElement('p');
       details.textContent = `${dayLabel(state.day)}, ${timeFormat(state.time)}.`;
       const note = document.createElement('small');
-      note.textContent = `${service.duration}\u00a0min · ${priceFormat(service.price)} — durée et montant exemples, à confirmer avec ANA GALAN.`;
+      note.textContent = 'Tarif et durée à demander au salon.';
       recap.append(title, details, note);
     }
     updateProgress();
@@ -215,7 +214,7 @@
     state.complete = true;
     state.firstName = $('#first-name').value.trim();
     const service = services[state.service];
-    $('#success-recap').textContent = `${state.firstName}, voici votre essai\u00a0: ${service.name}, ${dayLabel(state.day)} à ${timeFormat(state.time)}. ${service.duration}\u00a0min · ${priceFormat(service.price)}, exemples à confirmer.`;
+    $('#success-recap').textContent = `${state.firstName}, voici votre essai\u00a0: ${service.name}, ${dayLabel(state.day)} à ${timeFormat(state.time)}.`;
     $('#booking-form').hidden = true;
     $('#booking-success').hidden = false;
     updateProgress();
@@ -245,7 +244,7 @@
     const service = services[state.service];
     const utcStamp = (minute) => parisAppointmentUTC(state.day, minute).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
     const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-    return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Studio Lamy//Apercu ANA GALAN//FR', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT', `UID:essai-${state.day}-${state.time}@studiolamy.local`, `DTSTAMP:${stamp}`, `DTSTART:${utcStamp(state.time)}`, `DTEND:${utcStamp(state.time + service.duration)}`, 'SUMMARY:ESSAI uniquement - ANA GALAN - aucun RDV reserve', 'LOCATION:6 rue Alexander Taylor\\, 64000 Pau', 'DESCRIPTION:Simulation. Aucun rendez-vous reserve. Appelez le 05 59 27 47 13.', 'STATUS:TENTATIVE', 'TRANSP:TRANSPARENT', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Studio Lamy//Apercu ANA GALAN//FR', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT', `UID:essai-${state.day}-${state.time}@studiolamy.local`, `DTSTAMP:${stamp}`, `DTSTART:${utcStamp(state.time)}`, 'SUMMARY:ESSAI uniquement - ANA GALAN - aucun RDV reserve', 'LOCATION:6 rue Alexander Taylor\\, 64000 Pau', 'DESCRIPTION:Simulation. Aucun rendez-vous reserve. Appelez le 05 59 27 47 13.', 'STATUS:TENTATIVE', 'TRANSP:TRANSPARENT', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
   }
   $('#download-calendar').addEventListener('click', () => {
     const blob = new Blob([calendarFile()], { type: 'text/calendar;charset=utf-8' });

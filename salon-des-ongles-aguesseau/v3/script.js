@@ -153,9 +153,7 @@
     if (!input) return null;
     return {
       id: input.value,
-      label: input.dataset.label,
-      minutes: Number(input.dataset.minutes),
-      duration: input.dataset.duration
+      label: input.dataset.label
     };
   }
 
@@ -261,12 +259,12 @@
       const week = new Intl.DateTimeFormat('fr-FR', { weekday: 'short' }).format(date).replace('.', '');
       const dayNumber = new Intl.DateTimeFormat('fr-FR', { day: 'numeric' }).format(date);
       const current = data.day === iso;
-      const readable = `${dateLabel(date)}, ${closed ? 'fermé à confirmer' : 'créneau simulé'}`;
+      const readable = `${dateLabel(date)}, ${closed ? 'dimanche non proposé' : 'créneau simulé'}`;
       return `<label class="day-choice${closed ? ' is-disabled' : ''}${current ? ' is-selected' : ''}"${closed ? ' aria-disabled="true"' : ''}>
         <input type="radio" name="day" value="${iso}" aria-label="${readable}"${closed ? ' disabled' : ''}${current ? ' checked' : ''}>
         <span class="day-choice__week">${index === 0 ? 'aujourd’hui' : week}</span>
         <span class="day-choice__date">${dayNumber}</span>
-        ${closed ? '<span class="day-choice__status">Fermé · à confirmer</span>' : ''}
+        ${closed ? '<span class="day-choice__status">Non proposé</span>' : ''}
       </label>`;
     }).join('');
   }
@@ -293,9 +291,9 @@
     const date = dateFromIso(data.day);
     const isToday = data.day === localIso(new Date());
     const now = new Date();
-    const lastStart = 19 * 60 - service.minutes;
+    const closing = 19 * 60;
     const options = [];
-    for (let minute = 9 * 60; minute <= lastStart; minute += 30) {
+    for (let minute = 9 * 60; minute < closing; minute += 30) {
       const slotDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(minute / 60), minute % 60);
       const past = isToday && slotDate.getTime() <= now.getTime();
       const taken = !past && deterministicTaken(data.day, minute, service.id);
@@ -309,7 +307,7 @@
     timeList.innerHTML = options.length
       ? options.join('')
       : '<p class="time-empty">Aucun créneau ne tient dans cet horaire. Choisissez un autre jour.</p>';
-    if (slotNote) slotNote.textContent = `Créneaux et durées d’exemple, générés entre 09\u00a0h\u00a000 et 19\u00a0h\u00a000. Les heures disponibles, les dimanches et les jours fériés sont à confirmer.`;
+    if (slotNote) slotNote.textContent = `Créneaux fictifs générés entre 09\u00a0h\u00a000 et 19\u00a0h\u00a000. Les heures disponibles, les dimanches et les jours fériés sont à confirmer.`;
   }
 
   function updateContactRecap() {

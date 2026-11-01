@@ -78,21 +78,13 @@
     if (!input) return null;
     return {
       id: input.value,
-      name: input.dataset.name,
-      duration: Number(input.dataset.duration),
-      price: Number(input.dataset.price)
+      name: input.dataset.name
     };
-  }
-  function durationLabel(minutes) {
-    if (minutes < 60) return `${minutes}\u00a0min`;
-    const hours = Math.floor(minutes / 60);
-    const rest = minutes % 60;
-    return rest ? `${hours}\u00a0h ${String(rest).padStart(2, '0')}` : `${hours}\u00a0h`;
   }
   function updateSummary() {
     const service = selectedService();
     $('#summary-service').textContent = service ? `${service.name} · exemple` : 'À choisir';
-    $('#summary-duration').textContent = service ? `${durationLabel(service.duration)} · ${service.price}\u00a0€` : 'À choisir';
+    $('#summary-duration').textContent = 'Par téléphone';
     $('#summary-day').textContent = state.day ? formatDate(state.day, { weekday: 'long', day: 'numeric', month: 'long' }) : 'À choisir';
     $('#summary-time').textContent = state.time || 'À choisir';
   }
@@ -215,7 +207,7 @@
     const current = parisParts();
     const currentISO = `${current.year}-${current.month}-${current.day}`;
     const currentMinutes = Number(current.hour) * 60 + Number(current.minute);
-    const lastStart = opening.close - service.duration;
+    const lastStart = opening.close - 1;
     for (let minutes = opening.open; minutes <= lastStart; minutes += 30) {
       const hour = String(Math.floor(minutes / 60)).padStart(2, '0');
       const minute = String(minutes % 60).padStart(2, '0');
@@ -307,7 +299,7 @@
     const recap = $('#form-recap');
     recap.replaceChildren();
     const lines = [
-      service ? `${service.name} · ${durationLabel(service.duration)} · ${service.price}\u00a0€ (exemple)` : 'Prestation à choisir',
+      service ? service.name : 'Prestation à choisir',
       state.day ? formatDate(state.day, { weekday: 'long', day: 'numeric', month: 'long' }) : 'Jour à choisir',
       state.time || 'Heure à choisir'
     ];
@@ -352,13 +344,12 @@
   function makeCalendar() {
     const service = selectedService();
     const start = parisToUTC(state.day, state.time);
-    const end = new Date(start.getTime() + service.duration * 60000);
     const stamp = compactUTC(new Date());
     const title = escapeICS(`Simulation — ${service.name} · Salim coiffure`);
     const description = escapeICS('Rendez-vous de démonstration uniquement. Rien n’a été envoyé au salon.');
     const content = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Studio Lamy//Apercu Salim Coiffure//FR', 'CALSCALE:GREGORIAN',
-      'BEGIN:VEVENT', `UID:${Date.now()}@studiolamy.local`, `DTSTAMP:${stamp}`, `DTSTART:${compactUTC(start)}`, `DTEND:${compactUTC(end)}`,
+      'BEGIN:VEVENT', `UID:${Date.now()}@studiolamy.local`, `DTSTAMP:${stamp}`, `DTSTART:${compactUTC(start)}`,
       `SUMMARY:${title}`, `DESCRIPTION:${description}`, 'END:VEVENT', 'END:VCALENDAR'
     ].join('\r\n');
     const url = URL.createObjectURL(new Blob([content], { type: 'text/calendar;charset=utf-8' }));
@@ -370,7 +361,7 @@
   function showSuccess() {
     const service = selectedService();
     const name = $('#customer-name').value.trim();
-    $('#success-recap').textContent = `${name} · ${service.name}, ${formatDate(state.day, { weekday: 'long', day: 'numeric', month: 'long' })} à ${state.time}. Montant d’exemple : ${service.price}\u00a0€.`;
+    $('#success-recap').textContent = `${name} · ${service.name}, ${formatDate(state.day, { weekday: 'long', day: 'numeric', month: 'long' })} à ${state.time}.`;
     makeCalendar();
     const activePanel = panels.find((panel) => !panel.hidden);
     if (activePanel) activePanel.hidden = true;

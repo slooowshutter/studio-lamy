@@ -80,7 +80,7 @@
   const contactForm = booking.querySelector('[data-contact-form]');
   const successPanel = booking.querySelector('[data-booking-success]');
   const formSummary = booking.querySelector('[data-form-summary]');
-  const state = { service: null, date: null, time: null, duration: 30, firstName: '', phone: '' };
+  const state = { service: null, date: null, time: null, firstName: '', phone: '' };
   let currentStep = 1;
   let transitionNumber = 0;
 
@@ -228,7 +228,7 @@
       return;
     }
 
-    slotDate.textContent = `${frenchDate(state.date)} · durée de ${state.duration} min, exemple.`;
+    slotDate.textContent = `${frenchDate(state.date)} · créneaux simulés.`;
     const groups = [
       { label: 'Matin', from: schedule.opens, to: 12 * 60 },
       { label: 'Après-midi', from: 12 * 60, to: 17 * 60 },
@@ -246,7 +246,7 @@
       grid.className = 'slot-grid';
       let groupCount = 0;
 
-      for (let minute = group.from; minute + state.duration <= Math.min(group.to, schedule.closes); minute += 30) {
+      for (let minute = group.from; minute < Math.min(group.to, schedule.closes); minute += 30) {
         if (minute < schedule.opens) continue;
         const past = slotIsPast(state.date, minute);
         const taken = !past && slotIsTaken(state.date, minute, index);
@@ -300,7 +300,7 @@
     summaryDay.textContent = state.date ? frenchDate(state.date) : 'À choisir';
     summaryTime.textContent = state.time !== null ? formatHour(state.time) : 'À choisir';
     formSummary.textContent = state.service
-      ? `${state.service.name} · ${state.duration} min (exemple) · ${state.date ? frenchDate(state.date) : 'jour à choisir'} · ${state.time !== null ? formatHour(state.time) : 'heure à choisir'} · Prix à confirmer.`
+      ? `${state.service.name} · ${state.date ? frenchDate(state.date) : 'jour à choisir'} · ${state.time !== null ? formatHour(state.time) : 'heure à choisir'} · Prix à confirmer.`
       : 'Votre sélection s’affichera ici.';
     updateStepNav();
   }
@@ -387,8 +387,7 @@
 
     if (input.name === 'service') {
       const changed = !state.service || state.service.id !== input.value;
-      state.service = { id: input.value, name: input.dataset.name, duration: Number(input.dataset.min) || 30 };
-      state.duration = state.service.duration;
+      state.service = { id: input.value, name: input.dataset.name };
       if (changed) {
         state.date = null;
         clearTimeSelection();
@@ -539,7 +538,6 @@
   function downloadCalendar() {
     if (!state.date || state.time === null || !state.service) return;
     const start = parisWallTimeToUtc(state.date, formatHour(state.time, false));
-    const end = new Date(start.getTime() + state.duration * 60_000);
     const summary = escapeIcs(`Rendez-vous à confirmer — ${state.service.name} · Epil & You`);
     const location = escapeIcs('19, place Meynard, 33000 Bordeaux');
     const description = escapeIcs('Ajout de calendrier pour une simulation. Aucun rendez-vous n’a été transmis à Epil & You. Prix à confirmer.');
@@ -547,7 +545,7 @@
     const lines = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Studio Lamy//Apercu Epil You//FR', 'CALSCALE:GREGORIAN',
       'BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${utcStamp(new Date())}`, `DTSTART:${utcStamp(start)}`,
-      `DTEND:${utcStamp(end)}`, `SUMMARY:${summary}`, `LOCATION:${location}`, `DESCRIPTION:${description}`,
+      `SUMMARY:${summary}`, `LOCATION:${location}`, `DESCRIPTION:${description}`,
       'END:VEVENT', 'END:VCALENDAR'
     ];
     const calendar = `${lines.map(foldIcsLine).join('\r\n')}\r\n`;
@@ -570,7 +568,6 @@
     state.time = null;
     state.firstName = '';
     state.phone = '';
-    state.duration = 30;
     booking.querySelectorAll('input[name="service"], input[name="appointment-time"]').forEach((input) => { input.checked = false; });
     contactForm.reset();
     contactForm.hidden = false;

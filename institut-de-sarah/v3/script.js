@@ -197,7 +197,7 @@
       const pastAll = slots.length > 0 && slots.every((slot) => slot.past);
       const unavailable = !hours[day.day] || free === 0;
       const status = !hours[day.day] ? 'Fermé' : pastAll ? 'Terminé' : free === 0 ? 'Complet' : day.index === 0 ? 'Aujourd’hui' : day.index === 1 ? 'Demain' : '';
-      const spoken = `${dateLabel(day.iso)}, ${!hours[day.day] ? 'fermé' : free ? `${free} créneaux disponibles` : pastAll ? 'horaires passés' : 'complet'}`;
+      const spoken = `${dateLabel(day.iso)}, ${!hours[day.day] ? 'fermé' : free ? `${free} créneaux dans la simulation` : pastAll ? 'horaires passés' : 'complet'}`;
       const checked = state.day === day.iso && !unavailable ? ' checked' : '';
       return `<label class="day-choice"><input type="radio" name="day" value="${day.iso}" aria-label="${escapeHtml(spoken)}"${unavailable ? ' disabled' : ''}${checked}><span class="day-choice__week" aria-hidden="true">${new Intl.DateTimeFormat('fr-FR', { weekday: 'short', timeZone: 'UTC' }).format(day.date).replace('.', '')}</span><span class="day-choice__date" aria-hidden="true">${day.date.getUTCDate()}</span><span class="day-choice__state" aria-hidden="true">${escapeHtml(status)}</span></label>`;
     }).join('');
@@ -216,7 +216,7 @@
     }
     const slots = daySlots(day, service.duration);
     const available = slots.filter((slot) => slot.available).length;
-    $('[data-slot-note]', form).textContent = `${dateLabel(day.iso)} · ${durationLabel(service.duration)} de rendez-vous · ${available} créneaux disponibles. Les horaires barrés sont déjà pris ou passés.`;
+    $('[data-slot-note]', form).textContent = `${dateLabel(day.iso)} · ${durationLabel(service.duration)} de rendez-vous · ${available} créneaux dans la simulation. Les horaires barrés sont fictivement pris ou passés.`;
     if (!available) {
       slotHost.innerHTML = '<p class="time-empty">Aucun horaire ne reste disponible ce jour-là. Choisissez une autre date ou passez par Planity.</p>';
       state.time = null;
@@ -225,8 +225,8 @@
     slotHost.innerHTML = slots.map((slot) => {
       const disabled = !slot.available;
       const label = timeLabel(slot.minute);
-      const reason = slot.past ? 'horaire passé' : slot.booked ? 'déjà pris' : '';
-      return `<label class="time-choice"><input type="radio" name="time" value="${slot.minute}" aria-label="${label}${reason ? `, ${reason}` : ''}"${disabled ? ' disabled' : ''}${state.time === slot.minute && !disabled ? ' checked' : ''}><span>${label}</span>${slot.booked && !slot.past ? '<small class="time-choice__state" aria-hidden="true">pris</small><span class="sr-only">, déjà pris</span>' : ''}</label>`;
+      const reason = slot.past ? 'horaire passé' : slot.booked ? 'fictivement pris' : '';
+      return `<label class="time-choice"><input type="radio" name="time" value="${slot.minute}" aria-label="${label}${reason ? `, ${reason}` : ''}"${disabled ? ' disabled' : ''}${state.time === slot.minute && !disabled ? ' checked' : ''}><span>${label}</span>${slot.booked && !slot.past ? '<small class="time-choice__state" aria-hidden="true">pris dans la simulation</small><span class="sr-only">, fictivement pris</span>' : ''}</label>`;
     }).join('');
     if (state.time != null && !slots.some((slot) => slot.minute === state.time && slot.available)) state.time = null;
   };
@@ -239,7 +239,7 @@
       const service = serviceById(state.service);
       const day = dayByIso(state.day);
       $('[data-confirm-recap]', form).textContent = service && day
-        ? `${service.name} · ${dateLabel(day.iso)} à ${timeLabel(state.time)} · ${euroLabel(service.price)} (tarif indicatif).`
+        ? `${service.name} · ${dateLabel(day.iso)} à ${timeLabel(state.time)} · ${euroLabel(service.price)} (tarif relevé sur Planity).`
         : '';
     }
     panels.forEach((panel) => {

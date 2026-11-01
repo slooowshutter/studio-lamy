@@ -19,10 +19,10 @@
   }));
 
   const services = [
-    {name:'Shampoing · coupe · brushing', duration:45, price:30},
-    {name:'Forfait étudiante', duration:45, price:27},
-    {name:'Coupe homme', duration:30, price:23},
-    {name:'Forfait coupe · couleur', duration:90, price:54}
+    {name:'Shampoing · coupe · brushing'},
+    {name:'Shampoing'},
+    {name:'Coupe homme'},
+    {name:'Coupe · coloration'}
   ];
   const state = {step:0, service:null, date:null, time:null, name:'', phone:''};
   const steps = document.querySelector('#steps');
@@ -40,7 +40,7 @@
   const escapeText = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function updateSummary() {
     let out = '';
-    if (state.service !== null) out += `<div class="summary-item"><button type="button" data-goto="0">Prestation ↗</button><br>${services[state.service].name}<br>${services[state.service].price} € · ${services[state.service].duration} min*</div>`;
+    if (state.service !== null) out += `<div class="summary-item"><button type="button" data-goto="0">Prestation ↗</button><br>${services[state.service].name}</div>`;
     if (state.date) out += `<div class="summary-item"><button type="button" data-goto="1">Jour ↗</button><br>${fmtDate(state.date)}</div>`;
     if (state.time !== null) out += `<div class="summary-item"><button type="button" data-goto="2">Heure ↗</button><br>${fmtTime(state.time)}</div>`;
     summary.innerHTML = out || 'Choisissez une prestation pour commencer.';
@@ -49,17 +49,17 @@
     count.textContent = state.step < 4 ? `0${state.step+1} / 04` : 'TERMINÉ';
     let html = '';
     if (state.step === 0) {
-      html = `<div class="step"><h3 tabindex="-1">Choisir une prestation</h3><p>Tarifs indicatifs, à confirmer avec La Cabana Gio. Durées d’exemple.</p><fieldset><legend>Prestation</legend>${services.map((s,i)=>`<label class="option"><input type="radio" name="service" value="${i}" ${state.service===i?'checked':''}><span>${s.name}</span><small>${s.duration} min · ${s.price} €</small></label>`).join('')}</fieldset><div class="step-actions"><button class="next" data-next ${state.service===null?'disabled':''}>Choisir le jour →</button></div></div>`;
+      html = `<div class="step"><h3 tabindex="-1">Choisir une prestation</h3><p>Tarifs et durées&nbsp;: appelez le salon.</p><fieldset><legend>Prestation</legend>${services.map((s,i)=>`<label class="option"><input type="radio" name="service" value="${i}" ${state.service===i?'checked':''}><span>${s.name}</span><small>Tarif à confirmer</small></label>`).join('')}</fieldset><div class="step-actions"><button class="next" data-next ${state.service===null?'disabled':''}>Choisir le jour →</button></div></div>`;
     } else if (state.step === 1) {
       html = `<div class="step"><h3 tabindex="-1">Choisir un jour</h3><p>Les 14 prochains jours · horaires à confirmer.</p><div class="days">${Array.from({length:14},(_,i)=>{const d=dateAt(i),closed=d.getDay()===0;return `<button class="day ${sameDate(state.date,d)?'selected':''}" data-day="${i}" ${closed?'disabled':''}>${days[d.getDay()].slice(0,3)} ${d.getDate()}<small>${closed?'fermé':'disponible*'}</small></button>`}).join('')}</div><p class="tiny">* Disponibilité simulée.</p><div class="step-actions"><button data-back>← Retour</button><button class="next" data-next ${!state.date?'disabled':''}>Choisir l’heure →</button></div></div>`;
     } else if (state.step === 2) {
       const [start,end] = hours(state.date.getDay());
       const now = parisParts();
       const slots=[];
-      for(let t=start;t+services[state.service].duration<=end;t+=30){const past=sameDate(state.date,today())&&t<=now.hour*60+now.minute; const taken=(t/30+state.date.getDate())%5===0; slots.push(`<button class="slot ${state.time===t?'selected':''}" data-time="${t}" ${past||taken?'disabled':''}>${fmtTime(t)}${past?' · passé':taken?' · pris':''}</button>`)}
+      for(let t=start;t<end;t+=30){const past=sameDate(state.date,today())&&t<=now.hour*60+now.minute; const taken=(t/30+state.date.getDate())%5===0; slots.push(`<button class="slot ${state.time===t?'selected':''}" data-time="${t}" ${past||taken?'disabled':''}>${fmtTime(t)}${past?' · passé':taken?' · pris':''}</button>`)}
       html = `<div class="step"><h3 tabindex="-1">Choisir une heure</h3><p>${fmtDate(state.date)} · créneaux fictifs</p><div class="slots">${slots.join('')}</div><div class="step-actions"><button data-back>← Retour</button><button class="next" data-next ${state.time===null?'disabled':''}>Vos coordonnées →</button></div></div>`;
     } else if (state.step === 3) {
-      html = `<div class="step"><h3 tabindex="-1">Vos coordonnées</h3><p>${services[state.service].name} · ${fmtDate(state.date)} à ${fmtTime(state.time)} · ${services[state.service].price} € indicatifs.</p><form id="details" novalidate><label class="field">Prénom<input name="firstname" autocomplete="given-name" value="${escapeText(state.name)}" required aria-describedby="name-error"><span class="error" id="name-error"></span></label><label class="field">Téléphone<input name="phone" type="tel" autocomplete="tel" inputmode="tel" value="${escapeText(state.phone)}" required aria-describedby="phone-error"><span class="error" id="phone-error"></span></label><p>Simulation uniquement&nbsp;: aucune donnée n’est envoyée.</p><div class="step-actions"><button type="button" data-back>← Retour</button><button type="submit" class="next">Terminer la simulation →</button></div></form></div>`;
+      html = `<div class="step"><h3 tabindex="-1">Vos coordonnées</h3><p>${services[state.service].name} · ${fmtDate(state.date)} à ${fmtTime(state.time)}.</p><form id="details" novalidate><label class="field">Prénom<input name="firstname" autocomplete="given-name" value="${escapeText(state.name)}" required aria-describedby="name-error"><span class="error" id="name-error"></span></label><label class="field">Téléphone<input name="phone" type="tel" autocomplete="tel" inputmode="tel" value="${escapeText(state.phone)}" required aria-describedby="phone-error"><span class="error" id="phone-error"></span></label><p>Simulation uniquement&nbsp;: aucune donnée n’est envoyée.</p><div class="step-actions"><button type="button" data-back>← Retour</button><button type="submit" class="next">Terminer la simulation →</button></div></form></div>`;
     } else {
       html = `<div class="step success"><h3 tabindex="-1">Simulation terminée.</h3><p>${escapeText(state.name)}, votre exemple&nbsp;: ${services[state.service].name}, le ${fmtDate(state.date)} à ${fmtTime(state.time)}.</p><p>Aucun rendez-vous n’a été pris et rien n’a été envoyé. Pour joindre le salon, appelez le <a href="tel:0299791266">02 99 79 12 66</a>.</p><div class="step-actions"><button data-reset>Recommencer</button></div></div>`;
     }

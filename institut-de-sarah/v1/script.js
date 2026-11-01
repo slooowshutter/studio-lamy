@@ -70,7 +70,7 @@
     $('#summary-day').textContent = state.day ? longDay.format(dateObject(state.day)) : 'À choisir';
     $('#summary-time').textContent = state.time !== null ? timeText(state.time) : 'À choisir';
     $('.summary-rule span').style.transform = `scaleX(${Math.min(1, (state.step + 1) / 4)})`;
-    $('#confirmation-recap').textContent = state.day && state.time !== null ? `${service.name} — ${longDay.format(dateObject(state.day))}, à ${timeText(state.time)}. Rendez-vous de ${minutesText(service.minutes)}, dont ${service.care}${NB}min de soin. ${service.price}${NB}€, tarif indicatif. Simulation uniquement.` : '';
+    $('#confirmation-recap').textContent = state.day && state.time !== null ? `${service.name} — ${longDay.format(dateObject(state.day))}, à ${timeText(state.time)}. Rendez-vous de ${minutesText(service.minutes)}, dont ${service.care}${NB}min de soin. ${service.price}${NB}€, tarif relevé sur Planity. Simulation uniquement.` : '';
     $$('[data-goto]', $('.booking-steps')).forEach(button => {
       const step = Number(button.dataset.goto);
       button.disabled = state.step === 4 || step > state.reached;
@@ -241,7 +241,7 @@
       $('#day-error').textContent = 'Ce créneau est maintenant passé. Choisissez un nouveau jour.'; return;
     }
     const service = services[state.service];
-    $('#success-greeting').textContent = `${$('#first-name').value.trim()}, voici votre choix d’essai : ${service.name}, ${longDay.format(dateObject(state.day))} à ${timeText(state.time)}, ${minutesText(service.minutes)} de rendez-vous, ${service.price}${NB}€ à titre indicatif.`;
+    $('#success-greeting').textContent = `${$('#first-name').value.trim()}, voici votre choix d’essai : ${service.name}, ${longDay.format(dateObject(state.day))} à ${timeText(state.time)}, ${minutesText(service.minutes)} de rendez-vous, ${service.price}${NB}€ relevés sur Planity.`;
     showStep(4);
   });
   $('#restart-booking').addEventListener('click', () => {
