@@ -145,14 +145,10 @@
     const strong = document.createElement('strong');
     strong.textContent = formatShortDate(date);
     const small = document.createElement('small');
-    if (sunday) {
+    if (sunday || monday || weekday === 6) {
       button.disabled = true;
-      small.textContent = 'Dimanche · fermé';
-      button.setAttribute('aria-label', `${formatLongDate(date)}, fermé`);
-    } else if (monday) {
-      button.disabled = true;
-      small.textContent = 'Lundi · à confirmer';
-      button.setAttribute('aria-label', `${formatLongDate(date)}, horaires à confirmer`);
+      small.textContent = 'Non proposé';
+      button.setAttribute('aria-label', `${formatLongDate(date)}, non proposé dans l’exemple`);
     } else if (isHoliday) {
       button.classList.add('is-holiday');
       small.textContent = 'Férié · ouverture à confirmer';
@@ -185,8 +181,7 @@
 
   const openingWindow = (date) => {
     const weekday = date.getDay();
-    if (weekday >= 2 && weekday <= 5) return { ouverture: 9 * 60, fermeture: 19 * 60 };
-    if (weekday === 6) return { ouverture: 9 * 60, fermeture: 18 * 60 };
+    if (weekday >= 2 && weekday <= 5) return { ouverture: 10 * 60, fermeture: 17 * 60 };
     return null;
   };
   const renderSlots = () => {

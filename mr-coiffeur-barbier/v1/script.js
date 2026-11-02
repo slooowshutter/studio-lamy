@@ -22,8 +22,8 @@
   }
   function openingHours(key) {
     const day = dateFromKey(key).getUTCDay();
-    if (day === 0 || day === 1) return null;
-    return { start: 9 * 60, end: (day === 6 ? 18 : 19) * 60 };
+    if (day < 2 || day > 5) return null;
+    return { start: 10 * 60, end: 17 * 60 };
   }
   function timeLabel(minute) {
     const h = Math.floor(minute / 60);
@@ -156,8 +156,8 @@
     nextDays(now.key).forEach(key => {
       const day = dateFromKey(key).getUTCDay();
       const noSlot = state.service && !slotsForDay(key, state.service.duration, now).some(slot => !slot.disabled);
-      const disabled = day === 0 || day === 1 || !!noSlot;
-      const reason = day === 0 ? 'Fermé' : day === 1 ? 'À confirmer' : noSlot ? 'Écoulé' : '';
+      const disabled = day < 2 || day > 5 || !!noSlot;
+      const reason = (day < 2 || day > 5) ? 'Non proposé' : noSlot ? 'Écoulé' : '';
       const { label, input } = labelWithRadio('day-option', 'jour', key, disabled);
       const weekday = document.createElement('span');
       weekday.textContent = readableDate(key, { weekday: 'short' });

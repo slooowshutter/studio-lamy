@@ -25,10 +25,11 @@ function isoLocal(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padSt
 function dateLocale(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }
 function dates() { return Array.from({length:14}, (_,i) => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+i); return d; }); }
 function horaires(d) {
-  const fin = d.getDay() === 6 ? 18 : 19;
+  if (d.getDay() < 2 || d.getDay() > 5) return [];
+  const fin = 17;
   const now = new Date();
   const slots = [];
-  for (let h=9; h<fin; h++) for (const min of [0,30]) {
+  for (let h=10; h<fin; h++) for (const min of [0,30]) {
     const moment = new Date(d); moment.setHours(h,min,0,0);
     const value = `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`;
     const pris = (h*2 + min/30 + d.getDate()) % 5 === 0;
@@ -65,11 +66,11 @@ function render(moveFocus = false) {
   const counter=document.createElement('p'); counter.className='step-counter'; counter.textContent=etape === 4 ? 'SIMULATION TERMINÉE' : `ÉTAPE 0${etape+1} / 04`; wrap.append(counter);
   const title=document.createElement('h3'); title.tabIndex=-1; title.textContent=['Choisir une prestation','Choisir un jour','Choisir une heure','Vos coordonnées','Simulation terminée'][etape]; wrap.append(title);
   const intro=document.createElement('p');
-  intro.textContent=['Ces prestations durent 30 minutes selon Planity.','Lundi à confirmer et dimanche fermé. Les jours proposés servent uniquement à la simulation.','Créneaux fictifs dans les horaires relevés. Ils ne reflètent pas les disponibilités du salon.','Ces informations restent dans cette page et ne sont pas envoyées.','Rien n’a été envoyé. Pour un vrai rendez-vous, utilisez Planity ou appelez le salon.'][etape]; wrap.append(intro);
+  intro.textContent=['Ces prestations durent 30 minutes selon Planity.','Jours proposés pour l’exemple seulement, sans rapport avec les horaires du salon, à confirmer.','Créneaux fictifs. Ils ne reflètent ni les horaires ni les disponibilités du salon.','Ces informations restent dans cette page et ne sont pas envoyées.','Rien n’a été envoyé. Pour un vrai rendez-vous, utilisez Planity ou appelez le salon.'][etape]; wrap.append(intro);
   const options=document.createElement(etape < 3 ? 'fieldset' : 'div'); options.className='choices';
   if (etape < 3) { const legend=document.createElement('legend'); legend.className='sr-only'; legend.textContent=title.textContent; options.append(legend); }
   if(etape===0) services.forEach(s=>options.append(radio('prestation',s,s,choix.service===s,false)));
-  if(etape===1) { options.classList.add('days'); dates().forEach(d=>{const noSlots=d.getDay()!==0 && d.getDay()!==1 && !horaires(d).some(slot=>!slot.disabled); const closed=d.getDay()===0||d.getDay()===1||noSlots; const val=isoLocal(d); const label=dateFormat.format(d)+(d.getDay()===0?' · fermé':d.getDay()===1?' · à confirmer':noSlots?' · aucun créneau simulé':''); options.append(radio('jour',val,label,choix.date===val,closed));}); }
+  if(etape===1) { options.classList.add('days'); dates().forEach(d=>{const off=d.getDay()<2||d.getDay()>5; const noSlots=!off && !horaires(d).some(slot=>!slot.disabled); const closed=off||noSlots; const val=isoLocal(d); const label=dateFormat.format(d)+(off?' · non proposé':noSlots?' · aucun créneau simulé':''); options.append(radio('jour',val,label,choix.date===val,closed));}); }
   if(etape===2) { options.classList.add('slots'); horaires(dateLocale(choix.date)).forEach(slot=>options.append(radio('heure',slot.value,slot.label,choix.heure===slot.value,slot.disabled))); }
   if(etape===3) {
     options.innerHTML='<label class="field" for="prenom">Prénom<input id="prenom" name="prenom" autocomplete="given-name" required aria-describedby="erreur-prenom"><span class="error" id="erreur-prenom"></span></label><label class="field" for="telephone">Téléphone<input id="telephone" name="telephone" type="tel" inputmode="tel" autocomplete="tel" required aria-describedby="erreur-telephone"><span class="error" id="erreur-telephone"></span></label>';
