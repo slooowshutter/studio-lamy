@@ -138,6 +138,13 @@ window.__site = 1;
     required.forEach((i) => i.addEventListener('input', () => {
       if (i.value.trim()) { i.removeAttribute('aria-invalid'); i.removeAttribute('aria-describedby'); }
     }));
+    const copyBtn = $('[data-copy]', form);
+    if (copyBtn) copyBtn.addEventListener('click', () => {
+      const copy = $('#l-copy', form);
+      const done = () => { const c = $('[data-copied]', form); if (c) c.hidden = false; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(copy.value).then(done, () => { copy.select(); });
+      else { copy.select(); try { if (doc.execCommand('copy')) done(); } catch (_) {} }
+    });
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const missing = required.filter((i) => !i.value.trim());
@@ -155,11 +162,16 @@ window.__site = 1;
       err.hidden = true;
       const v = (n) => (form.elements[n] ? form.elements[n].value.trim() : '');
       const body = `Bonjour,\n\nJe m’appelle ${v('nom')}, je tiens ${v('commerce')}${v('ville') ? ' à ' + v('ville') : ''}. Vous pouvez me joindre au ${v('contact')}.\n\n${v('message') ? 'P.-S. : ' + v('message') + '\n\n' : ''}`;
-      const link = $('[data-mailto]', notice);
-      link.href = `mailto:studiolamy@proton.me?subject=${encodeURIComponent('Mon site : ' + v('commerce'))}&body=${encodeURIComponent(body)}`;
+      const subject = 'Mon site : ' + v('commerce');
+      const href = `mailto:studiolamy@proton.me?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      $('[data-mailto]', notice).href = href;
+      const copy = $('#l-copy', notice);
+      copy.value = `À : studiolamy@proton.me\nObjet : ${subject}\n\n${body}`;
       notice.hidden = false;
       notice.setAttribute('tabindex', '-1');
       notice.focus({ preventScroll: false });
+      // Pas de serveur d’envoi : on ouvre la messagerie du visiteur, lettre préremplie.
+      window.location.href = href;
     });
   }
 })();
