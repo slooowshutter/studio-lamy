@@ -134,6 +134,8 @@ window.__site = 1;
     }
     const err = $('#l-err', form);
     const notice = $('#l-notice', form);
+    const ok = $('#l-ok', form);
+    const submit = $('[data-submit]', form);
     const required = blanks.filter((i) => i.required);
     required.forEach((i) => i.addEventListener('input', () => {
       if (i.value.trim()) { i.removeAttribute('aria-invalid'); i.removeAttribute('aria-describedby'); }
@@ -156,6 +158,7 @@ window.__site = 1;
       if (missing.length) {
         err.hidden = false;
         notice.hidden = true;
+        ok.hidden = true;
         missing[0].focus();
         return;
       }
@@ -163,15 +166,47 @@ window.__site = 1;
       const v = (n) => (form.elements[n] ? form.elements[n].value.trim() : '');
       const body = `Bonjour,\n\nJe m’appelle ${v('nom')}, je tiens ${v('commerce')}${v('ville') ? ' à ' + v('ville') : ''}. Vous pouvez me joindre au ${v('contact')}.\n\n${v('message') ? 'P.-S. : ' + v('message') + '\n\n' : ''}`;
       const subject = 'Mon site : ' + v('commerce');
-      const href = `mailto:studiolamy@proton.me?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      $('[data-mailto]', notice).href = href;
-      const copy = $('#l-copy', notice);
-      copy.value = `À : studiolamy@proton.me\nObjet : ${subject}\n\n${body}`;
-      notice.hidden = false;
-      notice.setAttribute('tabindex', '-1');
-      notice.focus({ preventScroll: false });
-      // Pas de serveur d’envoi : on ouvre la messagerie du visiteur, lettre préremplie.
-      window.location.href = href;
+      const fail = () => {
+        $('[data-mailto]', notice).href = `mailto:studiolamy@proton.me?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        $('#l-copy', notice).value = `À : studiolamy@proton.me\nObjet : ${subject}\n\n${body}`;
+        notice.hidden = false;
+        notice.setAttribute('tabindex', '-1');
+        notice.focus({ preventScroll: false });
+      };
+      const payload = {
+        access_key: form.dataset.accessKey,
+        from_name: form.dataset.fromName,
+        subject,
+        nom: v('nom'),
+        commerce: v('commerce'),
+        ville: v('ville'),
+        contact: v('contact'),
+        message: v('message'),
+        botcheck: form.elements.botcheck ? form.elements.botcheck.checked : false,
+      };
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('contact'))) payload.replyto = v('contact');
+      notice.hidden = true;
+      ok.hidden = true;
+      submit.disabled = true;
+      submit.setAttribute('aria-busy', 'true');
+      const ctrl = 'AbortController' in window ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 15000) : 0;
+      fetch(form.dataset.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+        signal: ctrl ? ctrl.signal : undefined,
+      })
+        .then((r) => r.json().catch(() => ({})).then((j) => ({ okHttp: r.ok, j })))
+        .then(({ okHttp, j }) => {
+          if (!okHttp || !j || j.success !== true) throw new Error('envoi');
+          form.reset();
+          ok.hidden = false;
+          ok.setAttribute('tabindex', '-1');
+          ok.focus({ preventScroll: false });
+        })
+        .catch(fail)
+        .finally(() => { clearTimeout(timer); submit.disabled = false; submit.removeAttribute('aria-busy'); });
     });
   }
 })();
