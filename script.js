@@ -134,19 +134,10 @@ window.__site = 1;
     }
     const err = $('#l-err', form);
     const notice = $('#l-notice', form);
-    const ok = $('#l-ok', form);
-    const submit = $('[data-submit]', form);
     const required = blanks.filter((i) => i.required);
     required.forEach((i) => i.addEventListener('input', () => {
       if (i.value.trim()) { i.removeAttribute('aria-invalid'); i.removeAttribute('aria-describedby'); }
     }));
-    const copyBtn = $('[data-copy]', form);
-    if (copyBtn) copyBtn.addEventListener('click', () => {
-      const copy = $('#l-copy', form);
-      const done = () => { const c = $('[data-copied]', form); if (c) c.hidden = false; };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(copy.value).then(done, () => { copy.select(); });
-      else { copy.select(); try { if (doc.execCommand('copy')) done(); } catch (_) {} }
-    });
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const missing = required.filter((i) => !i.value.trim());
@@ -158,55 +149,17 @@ window.__site = 1;
       if (missing.length) {
         err.hidden = false;
         notice.hidden = true;
-        ok.hidden = true;
         missing[0].focus();
         return;
       }
       err.hidden = true;
       const v = (n) => (form.elements[n] ? form.elements[n].value.trim() : '');
       const body = `Bonjour,\n\nJe m’appelle ${v('nom')}, je tiens ${v('commerce')}${v('ville') ? ' à ' + v('ville') : ''}. Vous pouvez me joindre au ${v('contact')}.\n\n${v('message') ? 'P.-S. : ' + v('message') + '\n\n' : ''}`;
-      const subject = 'Mon site : ' + v('commerce');
-      const fail = () => {
-        $('[data-mailto]', notice).href = `mailto:studiolamy@proton.me?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        $('#l-copy', notice).value = `À : studiolamy@proton.me\nObjet : ${subject}\n\n${body}`;
-        notice.hidden = false;
-        notice.setAttribute('tabindex', '-1');
-        notice.focus({ preventScroll: false });
-      };
-      const payload = {
-        access_key: form.dataset.accessKey,
-        from_name: form.dataset.fromName,
-        subject,
-        nom: v('nom'),
-        commerce: v('commerce'),
-        ville: v('ville'),
-        contact: v('contact'),
-        message: v('message'),
-        botcheck: form.elements.botcheck ? form.elements.botcheck.checked : false,
-      };
-      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('contact'))) payload.replyto = v('contact');
-      notice.hidden = true;
-      ok.hidden = true;
-      submit.disabled = true;
-      submit.setAttribute('aria-busy', 'true');
-      const ctrl = 'AbortController' in window ? new AbortController() : null;
-      const timer = ctrl ? setTimeout(() => ctrl.abort(), 15000) : 0;
-      fetch(form.dataset.endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload),
-        signal: ctrl ? ctrl.signal : undefined,
-      })
-        .then((r) => r.json().catch(() => ({})).then((j) => ({ okHttp: r.ok, j })))
-        .then(({ okHttp, j }) => {
-          if (!okHttp || !j || j.success !== true) throw new Error('envoi');
-          form.reset();
-          ok.hidden = false;
-          ok.setAttribute('tabindex', '-1');
-          ok.focus({ preventScroll: false });
-        })
-        .catch(fail)
-        .finally(() => { clearTimeout(timer); submit.disabled = false; submit.removeAttribute('aria-busy'); });
+      const link = $('[data-mailto]', notice);
+      link.href = `mailto:studiolamy@proton.me?subject=${encodeURIComponent('Mon site : ' + v('commerce'))}&body=${encodeURIComponent(body)}`;
+      notice.hidden = false;
+      notice.setAttribute('tabindex', '-1');
+      notice.focus({ preventScroll: false });
     });
   }
 })();
