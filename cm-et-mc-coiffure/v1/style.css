@@ -1,0 +1,389 @@
+/* CM et MC Coiffure — l’accordéon des quatre temps. */
+:root {
+  --fond: #7d9b84;
+  --surface: #93b09a;
+  --encre: #12211a;
+  --clair: #f5efe0;
+  --terre: #c46a4a;
+  --trait: rgb(18 33 26 / .32);
+  --display: "Abril Fatface", serif;
+  --texte: "Lato", sans-serif;
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-in-out: cubic-bezier(.77, 0, .175, 1);
+  --ease-drawer: cubic-bezier(.32, .72, 0, 1);
+  --gouttiere: clamp(1.25rem, 4.5vw, 4.5rem);
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { color-scheme: light; text-size-adjust: 100%; -webkit-text-size-adjust: 100%; scroll-padding-top: 1.25rem; }
+body { margin: 0; background: var(--fond); color: var(--encre); font: 400 1rem/1.55 var(--texte); font-kerning: normal; -webkit-font-smoothing: antialiased; }
+::selection { background: var(--encre); color: var(--clair); }
+h1, h2, h3, h4, p, ol, ul, dl, dd, figure { margin: 0; }
+ol, ul { padding: 0; list-style: none; }
+button, input { color: inherit; font: inherit; }
+button { border: 0; cursor: pointer; }
+button, a, label { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+a, button, .choix-ligne, .choix-soin { transition: transform 160ms var(--ease-out); }
+a:active, button:not(:disabled):active, .choix-ligne:active, .choix-soin:active { transform: scale(.97); }
+button:disabled { cursor: not-allowed; }
+input { accent-color: var(--encre); }
+input[type="radio"], input[type="checkbox"] { flex-shrink: 0; width: 20px; height: 20px; margin: 0; }
+input[type="text"], input[type="tel"] { display: block; width: 100%; min-height: 50px; border: 1px solid var(--encre); border-radius: 0; padding: .6rem .75rem; background: var(--clair); font-size: 1rem; }
+fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+legend { padding: 0; margin-bottom: .75rem; font-weight: 700; }
+:focus-visible { outline: 3px solid var(--encre); outline-offset: 4px; }
+h1, h2, h3, h4 { text-wrap: balance; }
+p, li, dd { text-wrap: pretty; }
+p { max-width: 66ch; }
+sup { font-size: .65em; line-height: 0; }
+address { font-style: normal; }
+.cadre { width: min(100% - 2 * var(--gouttiere), 1280px); margin-inline: auto; }
+.sr-seul { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+nav.sr-seul:focus-within { position: static; width: auto; height: auto; margin: 0; padding: .75rem var(--gouttiere); overflow: visible; clip-path: none; white-space: normal; display: flex; flex-wrap: wrap; gap: 8px 1.5rem; background: var(--clair); }
+nav.sr-seul a { display: inline-flex; align-items: center; min-height: 44px; }
+.evitement { position: absolute; left: var(--gouttiere); top: 8px; z-index: 20; padding: .75rem 1rem; background: var(--clair); transform: translateY(-180%); }
+.evitement:focus { transform: none; }
+.repere { font-size: .75rem; font-weight: 700; line-height: 1.5; letter-spacing: .09em; text-transform: uppercase; }
+.petit { font-size: .875rem; line-height: 1.6; }
+.renvoi { display: inline-grid; min-width: 44px; min-height: 44px; place-items: center; font: 700 .75rem/1 var(--texte); vertical-align: middle; }
+.lien-texte { display: inline-block; min-height: 44px; padding-block: .6rem; max-width: 100%; overflow-wrap: anywhere; }
+.bouton { display: inline-flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 1.5rem; padding: .7rem 1rem; border: 1px solid var(--encre); border-radius: 3px; font-size: .9375rem; font-weight: 700; line-height: 1.4; text-decoration: none; text-align: left; }
+.bouton span[aria-hidden] { flex-shrink: 0; font-size: 1.2rem; }
+.bouton-clair { background: var(--clair); color: var(--encre); }
+.bouton-contour { background: transparent; }
+.retour { display: inline-block; min-height: 44px; padding: .6rem .25rem; background: transparent; text-align: left; text-decoration: underline; text-underline-offset: .25em; font-size: .9375rem; }
+
+/* La bande reste distincte du contenu du salon. */
+.apercu { background: var(--surface); border-bottom: 1px solid var(--encre); }
+.apercu-grille { display: grid; grid-template-columns: 5fr 7fr; column-gap: 3rem; padding-block: 1rem; font-size: .75rem; line-height: 1.55; }
+.apercu-texte { max-width: 48ch; }
+.apercu-texte strong { font-weight: 700; }
+.offre { min-width: 0; }
+.offre > a { display: block; min-height: 44px; font-weight: 700; padding-bottom: .45rem; }
+.offre > p + p { margin-top: .2rem; }
+
+.entete { padding-top: 1rem; padding-bottom: 1.55rem; }
+.entete-ligne { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.entete-ligne .repere span { margin-inline: .65rem; }
+.lien-appel { display: inline-flex; align-items: center; gap: 1.2rem; min-height: 44px; font-size: .875rem; font-variant-numeric: tabular-nums; text-decoration: none; }
+.identite { display: grid; grid-template-columns: 9fr 3fr; align-items: end; gap: 2rem; padding-block: .5rem 1rem; }
+h1 { font: 400 clamp(3rem, 6.4vw, 6rem)/.98 var(--display); letter-spacing: -.025em; }
+h1 span { display: inline; }
+.adresse-entete { font-size: .875rem; line-height: 1.5; padding-bottom: .2rem; justify-self: end; }
+.fait-entete { max-width: 69ch; font-size: clamp(1.0625rem, 1.5vw, 1.25rem); line-height: 1.5; }
+.fait-entete .renvoi { min-height: 30px; }
+
+/* Chaque titre est un grand volet, jamais une carte. */
+.panneau { border-top: 1px solid var(--encre); background: var(--surface); scroll-margin-top: 1rem; }
+.panneau:nth-of-type(even) { background: var(--fond); }
+.panneau:last-child { border-bottom: 1px solid var(--encre); }
+.panneau-titre { font-weight: 400; }
+.declencheur { width: min(100% - 2 * var(--gouttiere), 1280px); margin-inline: auto; padding: 1.4rem 0; display: grid; grid-template-columns: 64px minmax(0, 1fr) 44px; gap: 1.4rem; align-items: center; text-align: left; color: var(--encre); background: transparent; }
+.numero { align-self: start; padding-top: .65rem; font: 700 .8125rem/1 var(--texte); font-variant-numeric: tabular-nums; }
+.intitule { min-width: 0; font: 400 clamp(2.25rem, 5.3vw, 4.75rem)/1.05 var(--display); letter-spacing: -.025em; }
+.sous-titre { display: block; margin-top: .55rem; font: 400 .8125rem/1.4 var(--texte); letter-spacing: .01em; }
+.chevron { width: 36px; height: 36px; stroke: currentColor; stroke-width: 1.6; fill: none; transition: transform 300ms var(--ease-out); }
+.js .est-ouvert > .panneau-titre .chevron { transform: rotate(180deg); }
+.panneau-corps { display: grid; grid-template-rows: 1fr; }
+.panneau-decoupe { min-height: 0; overflow: clip; }
+.panneau-interieur { padding-block: .75rem 2.5rem; }
+.js .panneau:not(.est-ouvert) > .panneau-corps { grid-template-rows: 0fr; }
+/* La grille prend sa géométrie immédiatement ; seul le contenu est animé. */
+.js .panneau-interieur { opacity: 0; transform: translateY(8px); transition: opacity 220ms var(--ease-out), transform 300ms var(--ease-out); }
+.js .est-ouvert .panneau-interieur { opacity: 1; transform: none; transition-delay: 60ms; }
+
+.rituel-grille { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2rem; align-items: stretch; }
+.rituel-figure { grid-column: span 5; display: flex; flex-direction: column; }
+.meche { position: relative; flex: 1; min-height: 300px; isolation: isolate; overflow: hidden; border: 1px solid var(--encre); border-radius: 50% 50% 2px 2px / 43% 43% 2px 2px; background: var(--clair); }
+.traits-cheveux { position: absolute; inset: 0; width: 100%; height: 100%; stroke: var(--terre); stroke-width: 1.5; }
+.trait-cheveu { transform-box: fill-box; transform-origin: center; transition: transform 300ms var(--ease-out), opacity 240ms var(--ease-out); opacity: .65; }
+.trait-cheveu-1 { transform: translateX(0); opacity: 1; }
+.meche[data-temps="1"] .trait-cheveu-2, .meche[data-temps="2"] .trait-cheveu-3, .meche[data-temps="3"] .trait-cheveu-4 { transform: translateX(12px); opacity: 1; }
+.grand-quatre { position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; padding-bottom: 1.25rem; font: 400 clamp(10rem, 15vw, 14rem)/.9 var(--display); letter-spacing: -.06em; }
+.grand-quatre > span { align-self: center; font: 400 1.5rem/1 var(--display); letter-spacing: -.01em; writing-mode: vertical-rl; margin-left: .8rem; }
+.figure-repere { position: absolute; bottom: 1rem; left: 1.25rem; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; }
+.rituel-figure figcaption { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-top: .8rem; font-size: .75rem; font-variant-numeric: tabular-nums; }
+.progression-soin { display: block; width: 80px; height: 4px; background: rgb(18 33 26 / .18); }
+.progression-soin i { display: block; width: 25%; height: 100%; background: var(--encre); transform-origin: left; transition: transform 240ms var(--ease-out); }
+.rituel-etapes { grid-column: span 7; }
+.rituel-invitation { padding: 0 1rem .7rem; }
+.liste-temps { display: grid; gap: 8px; }
+.temps { width: 100%; min-height: 66px; display: grid; grid-template-columns: 30px minmax(0, 1fr) 24px; align-items: center; column-gap: 1rem; padding: .75rem 1rem; border-block-start: 1px solid var(--encre); background: transparent; text-align: left; }
+.temps.est-actif { background: var(--clair); }
+.temps-numero { font-size: .75rem; font-variant-numeric: tabular-nums; }
+.temps-nom { font: 400 clamp(1.5rem, 2.4vw, 2.125rem)/1.1 var(--display); letter-spacing: -.015em; }
+.temps-nom small { display: block; margin-top: .4rem; font: 400 .8125rem/1.5 var(--texte); letter-spacing: 0; }
+.temps-fleche { justify-self: end; font-size: 1.3rem; transition: transform 240ms var(--ease-out); }
+.temps.est-actif .temps-fleche { transform: rotate(45deg); }
+.suite-soin { display: flex; align-items: center; justify-content: space-between; gap: 2rem; border-top: 1px solid var(--trait); padding-top: 1.3rem; margin-top: 1.6rem; }
+.suite-soin p { font-size: .875rem; }
+.suite-soin .bouton { flex-shrink: 0; }
+
+/* Les prix sont une carte sourcée, absente de la simulation. */
+.note-tarifs { max-width: none; padding-bottom: 1.1rem; font-size: .875rem; }
+.ligne-soin { display: flex; justify-content: space-between; align-items: center; gap: 2rem; padding: 1.5rem 2rem; border: 1px solid var(--encre); border-left: 5px solid var(--encre); background: var(--surface); }
+.ligne-soin h3 { margin-block: .2rem; font: 400 2.5rem/1.1 var(--display); letter-spacing: -.02em; }
+.ligne-soin p:not(.repere):not(.prix-soin) { font-size: .875rem; }
+.prix-soin { font: 400 3.25rem/1.1 var(--display); text-align: right; white-space: nowrap; }
+.prix-soin span { display: block; margin-top: .5rem; font: 400 .8125rem/1.5 var(--texte); white-space: normal; }
+.coupe-entete { display: grid; grid-template-columns: 7fr 5fr; align-items: end; gap: 2rem; margin-block: 2.3rem 1.5rem; }
+.coupe-entete h3 { font: 400 clamp(1.75rem, 3.3vw, 2.75rem)/1.1 var(--display); letter-spacing: -.02em; }
+.coupe-entete p { max-width: 30ch; font-size: .875rem; }
+.ligne-coupe { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 90px 110px 125px; align-items: center; gap: 1.5rem; padding-block: 1.2rem; }
+.ligne-coupe::before { content: ""; position: absolute; inset: 0 0 auto; height: 1px; background: var(--encre); transform-origin: left; }
+.ligne-coupe h4 { font: 400 clamp(1.5rem, 2.6vw, 2.125rem)/1.2 var(--display); }
+.duree { font-size: .875rem; font-variant-numeric: tabular-nums; }
+.prix { font: 700 1.5rem/1.2 var(--texte); font-variant-numeric: tabular-nums; }
+.note-carte { margin-top: 1rem; }
+
+/* La prise de rendez-vous : un vrai chemin, puis un essai explicitement local. */
+.reserver-reel { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--trait); }
+.reserver-reel > p { flex: 1 1 35%; font-size: .9375rem; }
+.reserver-reel > p strong { font-size: 1.0625rem; }
+.simulation-intro { display: flex; align-items: start; gap: 1.25rem; margin-block: 1.5rem; }
+.etiquette { display: inline-block; padding: .2rem .5rem; border: 1px solid currentColor; font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+.simulation-intro p { font-size: .8125rem; max-width: 70ch; }
+.reservation { display: grid; grid-template-columns: minmax(0, 8fr) minmax(250px, 4fr); align-items: start; gap: 3rem; }
+.recap-mobile { display: none; }
+.etapes-reservation { display: grid; grid-template-columns: 1.3fr .9fr .9fr 1.6fr; gap: 8px; margin-bottom: 1.5rem; padding-bottom: .75rem; border-bottom: 1px solid var(--trait); }
+.etapes-reservation button { display: flex; align-items: center; gap: .45rem; width: 100%; min-height: 44px; padding: .35rem .2rem; background: transparent; font-size: .75rem; text-align: left; }
+.etapes-reservation button span { font-size: .625rem; }
+.etapes-reservation button[aria-current="step"] { font-weight: 700; text-decoration: underline; text-underline-offset: .5em; }
+.etapes-reservation button:disabled { text-decoration: line-through; }
+.etape-reservation > h3, .confirmation h3 { font: 400 clamp(1.75rem, 3vw, 2.5rem)/1.13 var(--display); letter-spacing: -.02em; margin-bottom: 1.25rem; }
+.etape-reservation > .petit { margin-bottom: 1rem; }
+.choix-coupes legend { font-size: .875rem; }
+.choix-ligne { display: flex; align-items: center; gap: .75rem; padding: .8rem; min-height: 54px; border: 1px solid var(--encre); cursor: pointer; }
+.choix-ligne + .choix-ligne { margin-top: 8px; }
+.choix-ligne span:last-child { margin-left: auto; white-space: nowrap; font-size: .8125rem; }
+.choix-ligne:has(:checked) { background: var(--clair); }
+.choix-soin { display: flex; align-items: center; gap: .75rem; padding: 1rem .8rem; margin-top: 1rem; border-block: 1px solid var(--encre); cursor: pointer; }
+.choix-soin small { display: block; font-size: .8125rem; line-height: 1.5; }
+.choix-soin + .petit { margin-top: .75rem; }
+.actions-etape { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.25rem; }
+.actions-etape > .bouton:last-child { margin-left: auto; }
+.jours { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin-top: 1rem; }
+.choix-jour, .choix-heure { position: relative; min-width: 0; cursor: pointer; transition: transform 160ms var(--ease-out); }
+.choix-jour:not(:has(:disabled)):active, .choix-heure:not(:has(:disabled)):active { transform: scale(.97); }
+.choix-jour input, .choix-heure input { position: absolute; left: .4rem; top: .4rem; opacity: 0; width: 1px; height: 1px; }
+.choix-jour > span { display: flex; min-height: 94px; flex-direction: column; justify-content: center; align-items: center; gap: .2rem; border: 1px solid var(--encre); text-align: center; font-size: .6875rem; }
+.choix-jour b { font-size: 1.5rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.choix-jour small { font-size: .625rem; line-height: 1.4; }
+.choix-jour input:checked + span, .choix-heure input:checked + span { background: var(--clair); border-width: 2px; }
+.choix-jour input:focus-visible + span, .choix-heure input:focus-visible + span { outline: 3px solid var(--encre); outline-offset: 3px; }
+.choix-jour:has(:disabled), .choix-heure:has(:disabled) { cursor: not-allowed; }
+.choix-jour input:disabled + span, .choix-heure input:disabled + span { border-style: dashed; }
+.choix-jour input:disabled + span b, .choix-heure input:disabled + span b { text-decoration: line-through; }
+.jour-selectionne { font-weight: 700; margin-bottom: 1rem; }
+.heures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.choix-heure > span { display: flex; min-height: 60px; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; border: 1px solid var(--encre); font-size: .875rem; font-variant-numeric: tabular-nums; }
+.choix-heure small { font-size: .6875rem; }
+.champs { display: grid; gap: 1rem; margin-top: 1.25rem; }
+.champs label { display: block; font-size: .875rem; font-weight: 700; margin-bottom: .4rem; }
+.erreur { min-height: 0; font-size: .875rem; font-weight: 700; }
+.erreur:not(:empty) { margin-top: .6rem; padding-left: .65rem; border-left: 3px solid var(--encre); }
+input[aria-invalid="true"] { border-width: 2px; }
+.selection { position: sticky; top: 1.5rem; border: 1px solid var(--encre); border-top: 4px solid var(--encre); padding: 1.5rem; background: var(--clair); }
+.selection-motif { display: flex; align-items: center; gap: 6px; margin-top: 1rem; height: 14px; }
+.selection-motif i { display: block; height: 100%; width: 14px; border: 1px solid var(--encre); border-radius: 50% 50% 0 0; }
+.selection-motif.avec-soin i { background: var(--fond); }
+.selection dl { margin-block: .75rem 1.25rem; }
+.selection dl > div { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: .75rem; border-bottom: 1px solid var(--trait); padding-block: .7rem; }
+.selection dt { font-size: .6875rem; }
+.selection dd { font-size: .9375rem; font-weight: 700; overflow-wrap: anywhere; }
+.selection-note { margin-top: 1rem; font-size: .75rem; }
+.confirmation { padding-block: .25rem; }
+.confirmation .etiquette { margin-bottom: 1rem; }
+.confirmation p + p { margin-top: .75rem; }
+.actions-confirmation { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.5rem; }
+
+.infos-grille { display: grid; grid-template-columns: 6fr 5fr; gap: clamp(2rem, 8vw, 8rem); }
+.horaires h3 { font: 400 2.5rem/1.1 var(--display); letter-spacing: -.02em; }
+table { width: 100%; border-collapse: collapse; font-size: .9375rem; font-variant-numeric: tabular-nums; }
+caption { text-align: left; padding-block: .75rem; font-size: .75rem; }
+th, td { text-align: left; padding-block: .65rem; border-bottom: 1px solid var(--trait); }
+th { font-weight: 400; }
+td { text-align: right; white-space: nowrap; }
+.note-horaires { margin-top: 1rem; }
+.repere-rue { padding-bottom: 1rem; }
+.numero-rue { display: block; font: 400 clamp(7rem, 12vw, 10rem)/.9 var(--display); letter-spacing: -.055em; }
+.repere-rue svg { display: block; width: 100%; height: 70px; stroke: var(--encre); stroke-width: 1; margin-top: .6rem; }
+.repere-rue .repere { display: block; text-align: right; }
+.venir address { padding-block: 1rem; font-size: 1.0625rem; }
+.venir-actions { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+
+.sources-grille { display: grid; grid-template-columns: 7fr 4fr; gap: clamp(2rem, 7vw, 7rem); }
+.sources-grille h3 { font: 400 clamp(1.75rem, 3.2vw, 2.6rem)/1.1 var(--display); letter-spacing: -.02em; }
+.liste-sources { margin-block: 1.1rem 1rem; }
+.liste-sources li { display: grid; grid-template-columns: 30px 1fr; gap: .5rem; padding-block: .75rem; border-top: 1px solid var(--trait); font-size: .875rem; }
+.liste-sources li > span { padding-top: .65rem; font-size: .75rem; }
+.a-completer { background: var(--clair); padding: 1.75rem; align-self: start; border-radius: 48% 48% 0 0 / 14% 14% 0 0; border: 1px solid var(--encre); }
+.a-completer .repere { padding-top: .5rem; margin-bottom: 1rem; }
+.a-completer ul { margin-block: 1.5rem; }
+.a-completer li { padding-block: .55rem; border-bottom: 1px solid var(--trait); font-size: .9375rem; }
+
+.pied { padding-block: 2rem 3rem; }
+.pied-identite { display: flex; justify-content: space-between; align-items: center; gap: 2rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--encre); }
+.pied-nom { font: 400 clamp(1.5rem, 3.7vw, 3rem)/1.1 var(--display); letter-spacing: -.02em; }
+.pied-grille { display: grid; grid-template-columns: 5fr 7fr; gap: 3rem; margin-top: 1.5rem; font-size: .75rem; }
+.pied-grille > div > p + p { margin-top: .75rem; }
+.pied .offre > p + p { margin-top: .3rem; }
+.note-signature { border-left: 2px solid var(--encre); padding-left: .75rem; }
+.barre-mobile { display: none; }
+
+/* Entrée unique ; les choix restent utilisables pendant le mouvement. */
+.js .entree { transition: transform 500ms var(--ease-out), opacity 420ms var(--ease-out); transition-delay: var(--retard, 0ms); }
+.js:not(.est-pret) .entree { opacity: 0; transform: translateY(10px); }
+.js:not(.est-pret) .trait-cheveu { opacity: 0; transform: translateY(16px); }
+.js [data-repere] { transition: opacity 450ms var(--ease-out); }
+.js [data-repere]:not(.est-visible) { opacity: 0; }
+.js .ligne-coupe[data-repere] { opacity: 1; }
+.js .ligne-coupe[data-repere]::before { transition: transform 500ms var(--ease-out); }
+.js .ligne-coupe[data-repere]:not(.est-visible)::before { transform: scaleX(.02); }
+.js .ligne-coupe[data-repere] > * { transition: opacity 300ms var(--ease-out); }
+.js .ligne-coupe[data-repere]:not(.est-visible) > * { opacity: 0; }
+.etape-reservation, .confirmation { opacity: 1; transform: none; transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); }
+.etape-reservation.prepare, .confirmation.prepare { opacity: 0; transform: translateX(8px); }
+html.au-clavier *, html.au-clavier *::before, html.au-clavier *::after { transition-duration: 0s !important; transition-delay: 0s !important; }
+
+@media (hover: hover) and (pointer: fine) {
+  .bouton:hover { transform: translateY(-2px); }
+  .declencheur:hover .intitule { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .12em; }
+  .temps:hover .temps-fleche { transform: translate(2px, -2px); }
+  .temps.est-actif:hover .temps-fleche { transform: rotate(45deg) translateY(-2px); }
+  .lien-texte:hover, .offre > a:hover { text-decoration-thickness: 2px; }
+  .choix-ligne:hover, .choix-soin:hover { outline: 1px solid var(--encre); outline-offset: -3px; }
+  .bouton:active { transform: scale(.97); }
+}
+@media (min-width: 1350px) { h1 span { margin-left: .08em; } }
+@media (max-width: 1050px) {
+  .apercu-grille { column-gap: 2rem; }
+  .identite { grid-template-columns: 1fr auto; }
+  h1 span { display: block; }
+  .reservation { grid-template-columns: minmax(0, 1fr) 260px; gap: 1.5rem; }
+  .jours { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .etapes-reservation { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .etapes-reservation button { flex-direction: column; align-items: start; justify-content: center; gap: .2rem; }
+  .suite-soin { align-items: start; }
+  .suite-soin .bouton { max-width: 45%; flex-shrink: 1; }
+}
+@media (max-width: 760px) {
+  html { scroll-padding-top: 110px; scroll-padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+  body { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
+  .apercu-grille { grid-template-columns: 1fr; gap: .75rem; padding-block: .8rem; }
+  .apercu-texte { max-width: none; }
+  .offre > a { min-height: 44px; }
+  .entete { padding-block: .7rem 1.1rem; }
+  .entete-ligne { gap: .5rem; }
+  .entete-ligne .repere { font-size: .625rem; letter-spacing: .06em; }
+  .entete-ligne .repere span { margin-inline: .3rem; }
+  .lien-appel { font-size: .75rem; gap: .5rem; white-space: nowrap; }
+  .identite { grid-template-columns: 1fr; gap: .65rem; padding-block: .6rem; }
+  h1 { font-size: clamp(3rem, 10.7vw, 4.5rem); line-height: 1.02; }
+  h1 span { display: inline; }
+  .adresse-entete { justify-self: start; font-size: .75rem; }
+  .adresse-entete br { display: none; }
+  .fait-entete { font-size: 1rem; line-height: 1.5; }
+  .declencheur { grid-template-columns: 24px minmax(0, 1fr) 28px; column-gap: 12px; padding-block: 1.25rem; }
+  .numero { padding-top: .4rem; font-size: .6875rem; }
+  .intitule { font-size: clamp(1.875rem, 7.8vw, 3rem); line-height: 1.1; }
+  #titre-informations .intitule { font-size: clamp(1.75rem, 7.3vw, 2.75rem); }
+  .sous-titre { font-size: .6875rem; line-height: 1.5; letter-spacing: 0; margin-top: .45rem; }
+  .chevron { width: 28px; height: 28px; }
+  .panneau-interieur { padding-block: .25rem 1.75rem; }
+  .rituel-grille { display: flex; flex-direction: column; gap: 1.25rem; }
+  .rituel-figure { display: grid; grid-template-columns: 1fr; }
+  .meche { min-height: 190px; border-radius: 45% 45% 2px 2px / 55% 55% 2px 2px; }
+  .grand-quatre { font-size: 9.5rem; padding-bottom: 1rem; }
+  .grand-quatre > span { font-size: 1.125rem; }
+  .traits-cheveux { width: 100%; height: 190px; }
+  .figure-repere { bottom: .6rem; font-size: .625rem; }
+  .rituel-figure figcaption { padding-top: .6rem; }
+  .rituel-invitation { padding-inline: .75rem; font-size: .625rem; }
+  .temps { min-height: 62px; padding: .75rem; grid-template-columns: 20px 1fr 20px; gap: .75rem; }
+  .temps-nom { font-size: 1.625rem; }
+  .temps-nom small { font-size: .75rem; }
+  .suite-soin { flex-direction: column; gap: 1rem; margin-top: 1.25rem; }
+  .suite-soin .bouton { max-width: none; width: 100%; }
+  .ligne-soin { padding: 1rem; flex-wrap: wrap; gap: 1rem; }
+  .ligne-soin h3 { font-size: 2.1rem; }
+  .ligne-soin .repere { font-size: .625rem; }
+  .prix-soin { text-align: left; font-size: 2.5rem; display: flex; align-items: center; gap: 1rem; }
+  .prix-soin span { margin: 0; max-width: 20ch; font-size: .75rem; }
+  .coupe-entete { grid-template-columns: 1fr; gap: .75rem; margin-block: 1.75rem 1.1rem; }
+  .coupe-entete h3 { font-size: 1.875rem; }
+  .ligne-coupe { grid-template-columns: minmax(0, 1fr) auto; gap: .75rem 1rem; padding-block: 1rem; }
+  .ligne-coupe h4 { font-size: 1.625rem; }
+  .ligne-coupe .duree { grid-column: 1; grid-row: 2; }
+  .ligne-coupe .prix { grid-column: 2; grid-row: 1; font-size: 1.25rem; }
+  .ligne-coupe .bouton { grid-column: 2; grid-row: 2; }
+  .reserver-reel { gap: .75rem; }
+  .reserver-reel > p { flex-basis: 100%; }
+  .reserver-reel > .bouton { width: 100%; }
+  .simulation-intro { flex-direction: column; gap: .6rem; }
+  .reservation { display: flex; flex-direction: column; gap: 1.5rem; }
+  .recap-mobile { position: sticky; top: 0; z-index: 4; display: block; order: -1; width: 100%; padding: .7rem .8rem; border: 1px solid var(--encre); background: var(--clair); }
+  .recap-mobile .repere { display: block; font-size: .625rem; }
+  .recap-mobile p { margin-top: .2rem; font-size: .8125rem; line-height: 1.5; }
+  .parcours { width: 100%; }
+  .etapes-reservation { gap: 8px; }
+  .etapes-reservation button { font-size: .75rem; }
+  .etapes-reservation button span { font-size: .625rem; }
+  .etape-reservation > h3, .confirmation h3 { font-size: 1.875rem; }
+  .choix-ligne { padding-inline: .65rem; font-size: .9375rem; gap: .65rem; }
+  .jours { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .heures { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .actions-etape { gap: .75rem; }
+  .actions-etape .bouton { gap: .75rem; }
+  .selection { position: static; width: 100%; padding: 1.25rem; }
+  .selection dl { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem 1rem; }
+  .selection dl > div { display: block; min-width: 0; }
+  .selection dd { margin-top: .3rem; }
+  .selection-note { font-size: .75rem; }
+  .infos-grille, .sources-grille { grid-template-columns: 1fr; gap: 2rem; }
+  .horaires h3 { font-size: 2rem; }
+  .venir { border-top: 1px solid var(--encre); padding-top: 1.5rem; }
+  .numero-rue { font-size: 8rem; }
+  .venir-actions .bouton { width: 100%; }
+  .a-completer { padding: 1.5rem; }
+  .a-completer h3 { font-size: 2rem; }
+  .pied { padding-block: 1.5rem 2rem; }
+  .pied-identite { align-items: start; gap: 1rem; }
+  .pied-nom { max-width: 12ch; font-size: 1.75rem; }
+  .pied-identite > a { flex-shrink: 0; }
+  .pied-grille { grid-template-columns: 1fr; gap: 1.5rem; }
+  .barre-mobile { position: fixed; z-index: 10; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; padding: 10px var(--gouttiere) calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--encre); background: var(--fond); }
+  .barre-mobile a { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 48px; padding: .6rem .85rem; border: 1px solid var(--encre); border-radius: 3px; font-size: .875rem; font-weight: 700; text-decoration: none; }
+  .barre-mobile a:last-child { background: var(--clair); }
+}
+@media (max-width: 370px) {
+  .entete-ligne { flex-wrap: wrap; }
+  h1 { font-size: 2.75rem; }
+  .intitule { font-size: 1.8rem; }
+  #titre-informations .intitule { font-size: 1.7rem; }
+  .temps-nom { font-size: 1.4rem; }
+  .jours { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .etapes-reservation { grid-template-columns: 1fr 1fr; }
+  .choix-ligne { flex-wrap: wrap; }
+  .actions-etape { align-items: stretch; flex-wrap: wrap; }
+  .actions-etape > .bouton:last-child { width: 100%; margin: 0; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .js .entree, .js .trait-cheveu, .js [data-repere], .js .ligne-coupe[data-repere] > *, .js .panneau-interieur, .etape-reservation, .confirmation { opacity: 1 !important; transform: none !important; }
+  .js .ligne-coupe[data-repere]::before { transform: none !important; }
+  .bouton:active, a:active, button:not(:disabled):active, .choix-ligne:active, .choix-soin:active, .choix-jour:not(:has(:disabled)):active, .choix-heure:not(:has(:disabled)):active { transform: none; }
+}
+@media print {
+  body { padding-bottom: 0; }
+  .barre-mobile, .etapes-reservation, .reservation, .sans-script { display: none !important; }
+  .js .panneau:not(.est-ouvert) > .panneau-corps { grid-template-rows: 1fr; }
+  .js .panneau-interieur, .js [data-repere], .js .ligne-coupe[data-repere] > * { opacity: 1; transform: none; }
+  .panneau { break-inside: avoid; }
+}
+
+/* sl-pricing-wrap: the two-plan price line must wrap on phones (Marc 1 Nov) */
+a[href$="service/index.html"],a[href$="service/"]{white-space:normal!important;max-width:100%}
