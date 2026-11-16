@@ -132,7 +132,7 @@ if (typeof document !== 'undefined') (() => {
   function annoncer(texte) { $('#annonce-reservation').textContent = texte; }
   function recapitulatif() {
     $('#recap-coupe').textContent = logique.coupes[etat.coupe]?.nom || 'À choisir';
-    $('#recap-soin').textContent = etat.soin ? 'ALPHA SLEEK · en complément' : 'Sans ajout du soin';
+    $('#recap-soin').textContent = etat.soin ? 'Soin à la kératine · en complément' : 'Sans ajout du soin';
     $('#recap-jour').textContent = etat.jour ? logique.fmtLong.format(dateChoisie()) : 'À choisir';
     $('#recap-heure').textContent = etat.heure === null ? 'À choisir' : logique.heureFr(etat.heure);
     navEtapes.forEach((bouton, i) => {
@@ -143,7 +143,7 @@ if (typeof document !== 'undefined') (() => {
     $('.selection-motif').classList.toggle('avec-soin', etat.soin);
     const bref = [];
     if (etat.coupe) {
-      bref.push(logique.coupes[etat.coupe].nom + (etat.soin ? ' + ALPHA SLEEK' : ', sans soin'));
+      bref.push(logique.coupes[etat.coupe].nom + (etat.soin ? ' + soin à la kératine' : ', sans soin'));
       if (etat.jour) bref.push(logique.fmtResume.format(dateChoisie()));
       if (etat.heure !== null) bref.push(logique.heureFr(etat.heure));
     }
@@ -303,7 +303,7 @@ if (typeof document !== 'undefined') (() => {
       annoncer(message); return;
     }
     etat.termine = true;
-    $('#recap-final').textContent = `Récapitulatif de l’essai : ${logique.coupes[etat.coupe].nom.toLowerCase()}${etat.soin ? ', avec ALPHA SLEEK' : ', sans ajout du soin'}, ${logique.fmtLong.format(dateChoisie())} à ${logique.heureFr(etat.heure)}.`;
+    $('#recap-final').textContent = `Récapitulatif de l’essai : ${logique.coupes[etat.coupe].nom.toLowerCase()}${etat.soin ? ', avec le soin à la kératine' : ', sans ajout du soin'}, ${logique.fmtLong.format(dateChoisie())} à ${logique.heureFr(etat.heure)}.`;
     formulaire.hidden = true; resultat.hidden = false;
     transitionEntree(resultat); recapitulatif();
     champs.prenom.value = ''; champs.telephone.value = '';
